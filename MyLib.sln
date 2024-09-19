@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35219.272
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eb3yrLib", "MyLib\Eb3yrLib.csproj", "{CEBA3B65-E027-43C5-88F2-8977C69A5862}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Playground", "Playground\Playground.csproj", "{20A7751F-6D73-4879-B68D-90EC6A33D832}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CEBA3B65-E027-43C5-88F2-8977C69A5862}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CEBA3B65-E027-43C5-88F2-8977C69A5862}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CEBA3B65-E027-43C5-88F2-8977C69A5862}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CEBA3B65-E027-43C5-88F2-8977C69A5862}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {723D9672-0EB9-4991-BE61-DEC463C4FE4E}
+	EndGlobalSection
+EndGlobal
