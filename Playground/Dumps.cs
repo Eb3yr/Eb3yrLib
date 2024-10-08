@@ -1,5 +1,7 @@
-﻿using System.Drawing;
+﻿using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
+using System.Collections;
 
 namespace Eb3yrLib
 {
@@ -80,4 +82,149 @@ namespace Eb3yrLib
 			LemmePoint(inter);
 		}
 	}
+}
+
+namespace Playground
+{
+	// Stack and queue simultaneously. Why am I doing this? 
+	// Supports enqueue, dequeue, push pop peek, isEmpty, isFull, etc. Go through Stack<T> and Queue<T> in docs to see what needs implementing.
+	// Torn between calling this Stew or Quack
+	public class Stew<T> : IEnumerable<T>, IReadOnlyCollection<T>, ICollection, IQueue<T>, IStack<T>
+	{
+		private List<T> _values;
+		private int start;
+		private int end;
+		public Stew()
+		{
+			_values = [];
+			// Should I use ICollection for values?
+			// The problem with using a list is that it won't wrap around. I don't want to be shuffling everything every time something gets dequeued and the entire list needs to be moved, which is O(n), but I don't want to have discontinuous bits. Eg It wraps around, then the arrays gets expanded, and now you have discontinuous filling. Having to shuffle at this point sucks.
+			// I am starting to realise why this is a stupid idea.
+		}
+
+		public int Count => _values.Count;
+
+		public bool IsSynchronized => throw new NotImplementedException();
+
+		public object SyncRoot => throw new NotImplementedException();
+
+		public void CopyTo(Array array, int index)
+		{
+			for (int i = index; i < _values.Count + index; i++)
+				array.SetValue(_values[i - index], i);
+		}
+
+		public IEnumerator<T> GetEnumerator()
+		{
+			return _values.GetEnumerator();
+		}
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+		public T Dequeue()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Enqueue(T value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public T Peek()
+		{
+			throw new NotImplementedException();
+		}
+
+		public T Pop()
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Push(T value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool TryDequeue(out T value)
+		{
+			if (_values.Count == 0)
+			{
+				value = default!;
+				return false;
+			}
+			try
+			{
+				value = Dequeue();
+				return true;
+			}
+			catch (Exception e)
+			{
+				Debug.WriteLine(e.ToString());
+				value = default!;
+				return false;
+			}
+		}
+
+		public bool TryEnqueue(T value)
+		{
+			try
+			{
+				Enqueue(value);
+				return true;
+			}
+			catch (Exception e)
+			{
+				Debug.WriteLine(e.ToString());
+				return false;
+			}
+		}
+
+		public bool TryPeek(out T value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool TryPop(out T value)
+		{
+			throw new NotImplementedException();
+		}
+
+		public bool TryPush(T item)
+		{
+			throw new NotImplementedException();
+		}
+		public void Clear()
+		{
+			_values.Clear();
+		}
+
+		public bool Contains(T value)
+		{
+			return _values.Contains(value);
+		}
+	}
+
+	public interface IQueue<T>
+	{
+		public abstract void Enqueue(T value);
+		public abstract T Dequeue();
+		public abstract bool TryEnqueue(T value);
+		public abstract bool TryDequeue(out T value);
+		public abstract bool Contains(T value);
+		public abstract void Clear();
+	}
+
+	public interface IStack<T>
+	{
+		public abstract void Push(T value);
+		public abstract T Pop();
+		public abstract T Peek();
+		public abstract bool TryPush(T item);
+		public abstract bool TryPop(out T value);
+		public abstract bool TryPeek(out T value);
+		public abstract bool Contains(T value);
+		public abstract void Clear();
+	}
+
+	// Prio queue? Screw that
 }
