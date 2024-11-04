@@ -227,4 +227,23 @@ namespace Playground
 	}
 
 	// Prio queue? Screw that
+
+	public static class StrExt
+	{
+		public static string Jumble(this string str)
+		{
+			Random rng = new();
+			char[] chars = str.ToCharArray();
+			return new string(chars.OrderBy((char c) => rng.NextSingle() - 0.5f).ToArray());
+		}
+	}
+
+	public static class CollectionExtensions
+	{
+		public static ICollection<T> Jumble<T>(this ICollection<T> collection)
+		{
+			Random rng = new();
+			return [.. collection.OrderBy((T item) => rng.NextSingle() - 0.5f)];
+		}
+	}
 }

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Eb3yrLib
 {
-	public static class Funcs
+	public static class HelperFuncs
 	{
 		public static T PushFromHalf<T>(T num, T exponent) where T : INumber<T> => PushFrom(num, (T)Convert.ChangeType(0.5d, typeof(T)), exponent);
 		public static T PushFrom<T>(T num, T from, T exponent) where T : INumber<T>

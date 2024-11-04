@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eb3yrLib", "MyLib\Eb3yrLib.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Playground", "Playground\Playground.csproj", "{20A7751F-6D73-4879-B68D-90EC6A33D832}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestingSciSharp", "TestingSciSharp\TestingSciSharp.csproj", "{D914ABD2-02F1-4ACD-9304-A978D20D4ED8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BenchmarkProj", "BenchmarkProj\BenchmarkProj.csproj", "{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +23,10 @@ Global
 		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20A7751F-6D73-4879-B68D-90EC6A33D832}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D914ABD2-02F1-4ACD-9304-A978D20D4ED8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D914ABD2-02F1-4ACD-9304-A978D20D4ED8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D914ABD2-02F1-4ACD-9304-A978D20D4ED8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D914ABD2-02F1-4ACD-9304-A978D20D4ED8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
