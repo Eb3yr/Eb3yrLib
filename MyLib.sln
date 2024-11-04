@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35219.272
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eb3yrLib", "MyLib\Eb3yrLib.csproj", "{CEBA3B65-E027-43C5-88F2-8977C69A5862}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eb3yrLib", "Eb3yrLib\Eb3yrLib.csproj", "{CEBA3B65-E027-43C5-88F2-8977C69A5862}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Playground", "Playground\Playground.csproj", "{20A7751F-6D73-4879-B68D-90EC6A33D832}"
 EndProject
