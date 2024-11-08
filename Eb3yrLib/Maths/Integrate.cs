@@ -1,6 +1,6 @@
-﻿using Eb3yrLib.Extensions;
-using MathNet.Numerics;
+﻿using MathNet.Numerics;
 using System.Numerics;
+using Eb3yrLib.Extensions;
 
 namespace Eb3yrLib.Maths
 {

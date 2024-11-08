@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Eb3yrLib
+namespace Eb3yrLib.Extensions
 {
 	public static class EnumerableExt
 	{
@@ -145,6 +145,12 @@ namespace Eb3yrLib
 		{
 			foreach (T e in enumerable)
 				yield return condition(e) ? success(e) : failure(e);
+		}
+
+		/// <summary>Get a circular enumerator from an enumerable, which restarts the enumeration upon reaching the end</summary>
+		public static CircularEnumerator<T> GetCircularEnumerator<T>(this IEnumerable<T> enumerable)
+		{
+			return new CircularEnumerator<T>(enumerable.GetEnumerator());
 		}
 	}
 }

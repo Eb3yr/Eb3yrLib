@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eb3yrLib", "Eb3yrLib\Eb3yrL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Playground", "Playground\Playground.csproj", "{20A7751F-6D73-4879-B68D-90EC6A33D832}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BenchmarkProj", "BenchmarkProj\BenchmarkProj.csproj", "{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BenchmarkProj", "Benchmarks\Benchmarks.csproj", "{5B5F6A91-F305-49D0-88BC-36CA1903A9C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
