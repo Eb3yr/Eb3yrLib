@@ -92,29 +92,6 @@ namespace Eb3yrLib.Extensions
 			}
 		}
 
-		/// <summary>Sorts an enumerable by converting it to an array and using Array.Sort</summary>
-		public static IEnumerable<T> Sort<T>(this IEnumerable<T> enumerable, IComparer<T>? comparer = null) where T : IComparable<T>
-		{
-			T[] arr = enumerable.ToArray();
-			comparer ??= Comparer<T>.Default;
-			Array.Sort(arr, comparer);
-			return arr;
-		}
-
-		/// <summary>Sorts a pair of enumerables based on the elements in the first enumerable</summary>
-		/// <param name="enumerable">Enumerable to be sorted on</param>
-		/// <param name="other">Enumerable that matches the sorting of the first enumerable</param>
-		/// <param name="comparer">Optional comparer. If null the default comparer is used</param>
-		/// <returns>A ValueTuple containing both enumerables</returns>
-		public static ValueTuple<IEnumerable<T>, IEnumerable<T>> Sort<T>(this IEnumerable<T> enumerable, IEnumerable<T> other, IComparer<T>? comparer = null) where T : IComparable<T>
-		{
-			T[] arr = enumerable.ToArray();
-			T[] otherArr = other.ToArray();
-			comparer ??= Comparer<T>.Default;
-			Array.Sort(arr, otherArr, comparer);
-			return (arr, otherArr);
-		}
-
 		/// <summary>Convert a numeric enumerable to another numeric type using INumber<T>.CreateSaturating(TOther)</summary>
 		public static IEnumerable<TOut> ToNum<T, TOut>(this IEnumerable<T> enumerable) where T : INumber<T> where TOut : INumber<TOut>
 		{
