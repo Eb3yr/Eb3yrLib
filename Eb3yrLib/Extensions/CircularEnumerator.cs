@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections;
 
 namespace Eb3yrLib.Extensions
 {
@@ -17,7 +12,11 @@ namespace Eb3yrLib.Extensions
 
 		object IEnumerator.Current => _enumerator.Current!;
 
-		public void Dispose() => _enumerator.Dispose();
+		public void Dispose()
+		{
+			_enumerator.Dispose();
+			GC.SuppressFinalize(this);
+		}
 
 		public bool MoveNext()
 		{
@@ -46,10 +45,5 @@ namespace Eb3yrLib.Extensions
 					yield return _enumerator.Current;
 			}
 		}
-	}
-
-	public static class CircularEnumeratorExt
-	{
-		
 	}
 }

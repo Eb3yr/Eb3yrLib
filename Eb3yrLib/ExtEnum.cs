@@ -1,6 +1,8 @@
 ﻿namespace Eb3yrLib
 {
+	#pragma warning disable CA1711
 	public abstract class ExtEnum<T>(T value) : IComparable, IComparable<ExtEnum<T>>, IEquatable<ExtEnum<T>> where T : IComparable, IComparable<T>, IEquatable<T>
+	#pragma warning restore CA1711
 	{
 		private readonly T _value = value;
 		public T Value { get => _value; }
@@ -27,7 +29,7 @@
 			return _value.Equals(other._value);
 		}
 
-		public override bool Equals(object? o) => Equals(o as ExtEnum<T>);
+		public override bool Equals(object? obj) => Equals(obj as ExtEnum<T>);
 
 		public override int GetHashCode() => _value.GetHashCode();
 

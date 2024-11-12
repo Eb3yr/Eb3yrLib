@@ -42,7 +42,7 @@ namespace Eb3yrLib.Maths
 			}
 
 			T result = T.Zero;
-			T half = (T)Convert.ChangeType(0.5, typeof(T));
+			T half = (T)Convert.ChangeType(0.5, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
 
 			var xEnum = x.GetEnumerator();
 			var yEnum = y.GetEnumerator();
