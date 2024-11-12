@@ -8,115 +8,99 @@ using System.Threading.Tasks;
 
 namespace Playground
 {
-	// Could these get extended into n dimensions?
-
-	/// <summary>
-	/// Attempting a jagged array implementation of 2D arrays that are indexed as a 2D array would be. Enumerators and all that scares me
-	/// </summary>
-	public class Jagged2D<T> : ICollection
+	/// <summary>Jagged array implementation of 2D arrays that are indexed as a 2D array would be and implements IEnumerable<T></summary>
+	public sealed class Jagged2D<T> : IEnumerable<T>
 	{
-		public Jagged2D(int x, int y)
+		/// <summary>Construct a jagged 2D array of dimensions m by n, indexed as [m, n]</summary>
+		public Jagged2D(int m, int n)
 		{
-			// Consistent size of arrays within the array, like a 2D array, as regular jagged arrays can have varying sizes	
-			// Which way round does it go again? Don't think it matters so long as x[0, 1] maps onto x[0][1]
-			jagged = new T[y][];
-			for (int i = 0; i < x; i++)
-				jagged[i] = new T[x];
+			this.m = m;
+			this.n = n;
+			jagged = new T[n][];
+			for (int i = 0; i < m; i++)
+				jagged[i] = new T[m];
 		}
-		private T[][] jagged;
+
+		public Jagged2D(T[][] arr)
+		{
+			// Check n matches
+
+			m = arr.Length;
+			n = arr[0].Length;
+			jagged = arr;	// Should really be copying here but what the heck
+		}
+		
+		// Cannot be reassigned. jagged's elements can still be mutated, so the arrays stored within it can also be reassigned. Do not do so lest you compromise their dimensions!
+		private readonly T[][] jagged;
+		public readonly int m;
+		public readonly int n;
 
 		public int Count => jagged.Length * jagged[0].Length;
 
+		// Don't need to worry about concurrency, don't care
 		public bool IsSynchronized => throw new NotImplementedException();
-
 		public object SyncRoot => throw new NotImplementedException();
 
-		public T this[int x, int y]
+		public T this[int m, int n]
 		{
-			get => jagged[x][y];
-			set => jagged[x][y] = value;
+			get => jagged[m][n];
+			set => jagged[m][n] = value;
 		}
 
-		public void CopyTo(Array array, int index)
-		{
-			throw new NotImplementedException();
-		}
-
-		public IEnumerator GetEnumerator()
-		{
-			throw new NotImplementedException();
-		}
+		public IEnumerator<T> GetEnumerator() => new Jagged2DEnumerator<T>(this);
+		IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 	}
 
-	/// <summary>
-	/// An N-dimensional array implemented using a single array. 
-	/// </summary>
-	public class SingleArrNDims<T> : ICollection, ICloneable    // IStructuralEquatable and IStructuralComparable. Structural compares actual values, it's the opposite of comparing references.
+	// About twice as slow as a 2D array enumeration
+	public sealed class Jagged2DEnumerator<T>(Jagged2D<T> inJagged) : IEnumerator<T>
 	{
-		readonly T[] _values;   // Reference cannot be altered, but individual elements can
-		readonly int[] _dimensions; // Tracks length of each dimension for the sake of the indexer
-		public SingleArrNDims(int size, params int[] additionalDimensionSizes)
-		{
-			_values = new T[size * additionalDimensionSizes.Aggregate(1, (product, next) => product * next)];
-			_dimensions = new int[1 + additionalDimensionSizes.Length];
-			_dimensions[0] = size;
-			additionalDimensionSizes.CopyTo(_dimensions, 1);
-		}
+		private Jagged2D<T> jagged = inJagged;
+		private int _m = 0;
+		private int _n = 0;
 
-		public SingleArrNDims(T[] inValues, int[] inDimensions)
-		{
-			_values = inValues;
-			_dimensions = inDimensions;
-		}
+		private T _current = default!;
+		public T Current => _current;
 
-		public T this[int index] { get => _values[index]; set => _values[index] = value; }
+		object IEnumerator.Current => throw new NotImplementedException();
 
-		// Considering allowing lesser numbers of arguments fetching a SingleArrNDims instance
-		public T this[int index, params int[] indexes]
+		// Get the jagged array's outer array layer's enumerator, enumerate through it, and for each iteration enumerate through the array contained within.
+		// Or lets do a simpler implementation and index the array
+
+		public void Dispose() { }
+
+		public bool MoveNext()
 		{
-			get
+			if (_m < jagged.m)
 			{
-				if (indexes.Length != _dimensions.Length - 1)
-					throw new ArgumentException("Number of arguments does not match the number of dimensions of this array.");
-
-				return _values[GetIndexFromArgs(index, indexes)];
+				if (_n < jagged.n)
+				{
+					_current = jagged[_m, _n];
+					_n++;
+					return true;
+				}
+				else
+				{
+					_m++;
+					_n = 0;
+					if (_m < jagged.m)
+					{
+						_current = jagged[_m, _n];
+						return true;
+					}
+					_current = default!;
+					return false;
+				}
 			}
-			set
-			{
-				if (indexes.Length != _dimensions.Length - 1)
-					throw new ArgumentException("Number of arguments does not match the number of dimensions of this array.");
+			else
+				_current = default!;
 
-				_values[GetIndexFromArgs(index, indexes)] = value;
-			}
+			return false;
 		}
 
-		public int Count => _values.Length;
-
-		public int Rank => _dimensions.Length;
-
-		public bool IsReadOnly => _values.IsReadOnly;
-
-		public bool IsSynchronized => _values.IsSynchronized;
-
-		public object SyncRoot => _values.SyncRoot;
-
-		public object Clone() => _values.Clone();
-
-		public void CopyTo(Array array, int index) => _values.CopyTo(array, index);
-
-		public IEnumerator GetEnumerator() => _values.GetEnumerator();
-
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private int GetIndexFromArgs(int index, params int[] indexes)
+		public void Reset()
 		{
-			// Maybe have an additional array field that caches the index ranges. 0 element is the product of all, 1st element is product of all but the topmost-level dimension length, etc.
-			// Using this method I can just sum up the argument for each dimension multiplied by that dimension's width
-			// Ezpz just a few integer multiplications and additions, shouldn't be *too* expensive. Compare caching vs generating on the fly.
-			// Generating on the fly might be mean for iterators
-
-
-
-			throw new NotImplementedException();
+			_m = 0;
+			_n = 0;
 		}
 	}
 }

@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="ScottPlot" Version="5.0.44" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Eb3yrLib\Eb3yrLib.csproj" />
   </ItemGroup>
 
