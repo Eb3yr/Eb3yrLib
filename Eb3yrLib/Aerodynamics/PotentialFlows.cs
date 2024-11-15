@@ -38,7 +38,34 @@ namespace Eb3yrLib.Aerodynamics
 			return (x, z) => gamma * oneOver2Pi * double.Log(Radius(x - x0, z - z0));
 		}
 
-		static double Radius(double x, double z) => double.Sqrt(x * x + z * z);
+		public static StreamFunction Rankine(double Uinf, double lambda, double b, double x0 = 0, double z0 = 0)
+		{
+			// Would like to do an extension with angle alpha, but I'm really not sure quite how that'll work
+			return (Uniform(Uinf) + Source(lambda, x0 + b, z0) + Sink(lambda, x0 - b, z0)).Sum();	// Verify Source and Sink are offset correctly
+		}
+
+		public static StreamFunction Cylinder(double Uinf, double kappa, double gamma = 0, double x0 = 0, double z0 = 0)
+		{
+			StreamFunction sf = Uniform(Uinf);
+			sf += Doublet(kappa, x0, z0);
+			if (gamma != 0)	// If gamma = 0 then no lift, can remove vortex
+				sf += Vortex(gamma, x0, z0);
+
+			sf.Sum();
+			return sf;
+		}
+
+		#region other
+		private static double Radius(double x, double z) => double.Sqrt(x * x + z * z);
+
+		/// <summary>Get the cartesian velocity function from a cartesian stream function</summary>
+		public static Func<double, double, (double u, double w)> GetVelocityFunc(this StreamFunction func)
+		{
+			var _f = new Func<double, double, double>(func);
+			var dfdx = Differentiate.FirstPartialDerivative2Func(_f, 0);
+			var dfdz = Differentiate.FirstPartialDerivative2Func(_f, 1);
+			return (x, z) => (dfdz(x, z), -dfdx(x, z));	// u = dphi/dz, w = -dphi/dx. 
+		}
 
 		public static (double x, double z)[,] CoordGrid(double xMin, double xMax, double zMin, double zMax, double dx, double dz)
 		{
@@ -51,6 +78,20 @@ namespace Eb3yrLib.Aerodynamics
 					arr[i, j] = (xMin + i * dx, zMin + j * dz);
 
 			return arr;
+		}
+
+		public static double[,] StreamGrid((double x, double z)[,] meshGrid, StreamFunction func)
+		{
+			double[,] stream = new double[meshGrid.GetLength(0), meshGrid.GetLength(1)];
+			for (int i = 0; i < meshGrid.GetLength(0); i++)
+			{
+				for (int j = 0; j < meshGrid.GetLength(1); j++)
+				{
+					(double x, double z) val = meshGrid[i, j];
+					stream[i, j] = func(val.x, val.z);
+				}
+			}
+			return stream;
 		}
 
 		public static (double u, double w)[,] VelocityGrid((double x, double z)[,] meshGrid, StreamFunction func)
@@ -69,40 +110,18 @@ namespace Eb3yrLib.Aerodynamics
 			return velGrid;
 		}
 
-		/// <summary>Get the cartesian velocity function from a cartesian stream function</summary>
-		public static Func<double, double, (double u, double w)> GetVelocityFunc(this StreamFunction func)
-		{
-			var _f = new Func<double, double, double>(func);
-			var dfdx = Differentiate.FirstPartialDerivative2Func(_f, 0);
-			var dfdz = Differentiate.FirstPartialDerivative2Func(_f, 1);
-			return (x, z) => (dfdz(x, z), -dfdx(x, z));	// u = dphi/dz, w = -dphi/dx. 
-		}
-
-		public static double[,] StreamGrid((double x, double z)[,] meshGrid, StreamFunction func)
-		{
-			double[,] stream = new double[meshGrid.GetLength(0),meshGrid.GetLength(1)];
-			for (int i = 0; i < meshGrid.GetLength(0); i++)
-			{
-				for (int j = 0; j < meshGrid.GetLength(1); j++)
-				{
-					(double x, double z) val = meshGrid[i, j];
-					stream[i, j] = func(val.x, val.z);
-				}
-			}
-			return stream;
-		}
-
-		/// <summary>Combine the functions within the invocation list of the given StreamFunction such that invoking the returned StreamFunction will return the sum of each function added to that delegate, rather than the result of invoking only the last member of the invocation list.</summary>
+		/// <summary>Combine the functions within the invocation list of the given StreamFunction such that invoking the returned StreamFunction will return the sum of each function added to that delegate, rather than the result of invoking only the last member of the invocation list. This must be invoked on a stream function delegate with more than one function added to the invocation list.</summary>
 		public static StreamFunction Sum(this StreamFunction sf)
 		{
 			return (double x, double z) =>
 			{
 				double sum = 0;
-				foreach (StreamFunction s in sf.GetInvocationList())
+				foreach (StreamFunction s in (sf.GetInvocationList() as StreamFunction[])!)
 					sum += s(x, z);
 
 				return sum;
 			};
 		}
+		#endregion
 	}
 }

@@ -2,6 +2,7 @@
 using Eb3yrLib.Extensions;
 using Eb3yrLib.Maths;
 using Eb3yrLib.Aerodynamics;
+using static Eb3yrLib.Aerodynamics.PotentialFlows;
 using Playground;
 using System.Collections;
 using MathNet.Numerics;
@@ -35,20 +36,6 @@ static RootedCoordinateVector[] CoordVecHelper((double x, double z)[,] coords, (
 
 static Coordinates3d[,] Coord3DHelper((double x, double z)[,] coords, double[,] stream, double maskAbove = 100)
 {
-	//var arr = new Coordinates3d[coords.Length];
-	//int i = 0;
-	//var cEnum = coords.GetEnumerator();
-	//var sEnum = stream.GetEnumerator();
-	//
-	//while (cEnum.MoveNext() && sEnum.MoveNext())
-	//{
-	//	var cc = ((double x, double z))cEnum.Current;
-	//	var sc = (double)sEnum.Current;
-	//	if (!double.IsFinite(sc) || double.Abs(sc) > maskAbove) sc = maskAbove;
-	//
-	//	arr[i] = new Coordinates3d(cc.x, cc.z, sc);
-	//	i++;
-	//}
 	var arr = new Coordinates3d[coords.GetLength(0), coords.GetLength(1)];
 	for (int i = 0; i < arr.GetLength(0); i++)
 		for (int j = 0; j < arr.GetLength(1); j++)
@@ -58,25 +45,32 @@ static Coordinates3d[,] Coord3DHelper((double x, double z)[,] coords, double[,] 
 }
 
 var plt = new Plot();
-var grid = PotentialFlows.CoordGrid(-1, 4, -1, 4, 0.02, 0.02);
+var grid = PotentialFlows.CoordGrid(-4, 4, -2, 2, 0.02, 0.02);
 
 double gamma = -2.4 * double.Pi;
-psi = PotentialFlows.Vortex(gamma, 2.3, 2.1) + PotentialFlows.Vortex(-gamma, 2.3, -2.1) + PotentialFlows.Vortex(-gamma, -2.3, 2.1) + PotentialFlows.Vortex(-gamma, 4.6, -2.1) + PotentialFlows.Vortex(-gamma, -2.3, 4.2) + PotentialFlows.Vortex(gamma, 2.3, 4.2) + PotentialFlows.Vortex(gamma, 4.6, 2.1) + PotentialFlows.Vortex(gamma, -2.3, -2.1) + PotentialFlows.Vortex(-gamma, 4.6, 4.2);
+psi = Uniform(4.7) + Source(1.6);
 psi = psi.Sum();
+
+Console.WriteLine(psi(2, 4.1) - psi(1, 2.5));
 
 var stream = PotentialFlows.StreamGrid(grid, psi);
 var c3d = Coord3DHelper(grid, stream);	// This and stream show that I'm getting the correct stream values for x and z -> uniform depends solely on z
 //plt.Add.Heatmap(c3d);	// No good, stinky, arranges based on array index, NOT on coordinate? Even though it still has coordinates? what
-var cl = plt.Add.ContourLines(c3d, 250); // : )
+var cl = plt.Add.ContourLines(c3d, 50); // : )
 cl.LabelStyle.IsVisible = false;
 cl.Colormap = new ScottPlot.Colormaps.Turbo();
-cl.LineWidth = 5;
+cl.LineWidth = 2;
 cl.LineStyle.Rounded = true;
 plt.SavePng("pltTest.png", 1600, 1200);
 
 
+static unsafe bool Test(int** arr, int r, int c)	// Only takes jagged arrays
+{
+	_ = arr[r][c];
+	return true;
+}
 
-
+Memory<int> mem = new([1, 2, 3, 4, 5, 6, 7, 8]);
 
 var VelFunc = psi.GetVelocityFunc();
 Console.WriteLine(VelFunc(2.3, 0));

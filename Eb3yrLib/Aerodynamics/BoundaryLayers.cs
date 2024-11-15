@@ -26,17 +26,17 @@ namespace Eb3yrLib.Aerodynamics
 		}
 	}
 
-	public static class LaminarPlateEquations
+	public static class LaminarPlate
 	{
 
 	}
 
-	public static class TurbulentPlateEquations
+	public static class TurbulentPlate
 	{
 
 	}
 
-	public static class GeneralPlateBLEquations
+	public static class GeneralPlate
 	{
 		/// <summary>
 		/// Calculate the total viscous drag coefficient C_F; not to be confused with the local viscous drag coefficient C_f. The same underlying equation as ViscousDragCoefficient(), but with dragPerUnitSpan in place of drag and chordLength in place of surfaceArea.
