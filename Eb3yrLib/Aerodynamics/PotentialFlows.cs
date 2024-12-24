@@ -67,6 +67,14 @@ namespace Eb3yrLib.Aerodynamics
 			return (x, z) => (dfdz(x, z), -dfdx(x, z));	// u = dphi/dz, w = -dphi/dx. 
 		}
 
+		public static (double u, double w) GetVelocityApprox(StreamFunction func, double x, double z, double delta = 0.0005)
+		{
+			// Generally precise to 7 or 8dp, increase delta if fp error is significant
+			double dfdx = 0.5 * (func(x + delta, z) - func(x - delta, z)) / delta;
+			double dfdz = 0.5 * (func(x, z + delta) - func(x, z - delta)) / delta;
+			return (dfdz, -dfdx);
+		}
+
 		public static (double x, double z)[,] CoordGrid(double xMin, double xMax, double zMin, double zMax, double dx, double dz)
 		{
 			int iMax = (int)double.Ceiling((xMax - xMin) / dx);
@@ -116,7 +124,10 @@ namespace Eb3yrLib.Aerodynamics
 			return (double x, double z) =>
 			{
 				double sum = 0;
-				foreach (StreamFunction s in (sf.GetInvocationList() as StreamFunction[])!)
+				if (sf.GetInvocationList() is not StreamFunction[] il)
+					return 0;
+
+				foreach (StreamFunction s in il)
 					sum += s(x, z);
 
 				return sum;

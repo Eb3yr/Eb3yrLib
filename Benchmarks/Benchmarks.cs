@@ -1,27 +1,129 @@
 ﻿using BenchmarkDotNet;
 using BenchmarkDotNet.Attributes;
 using Eb3yrLib;
+using Eb3yrLib.Extensions;
+using Eb3yrLib.Maths;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Globalization;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace BenchmarkProj
 {
 	[MemoryDiagnoser(true)]
 	public class Benchmarks
 	{
-		static readonly int[] a = [126, 222, 288, -921, -733, 64, 383, -314, -418, -903, -140, 813, 62, -986, -803, -954, 131, -458, -815, 356, 955, 194, 467, 543, 635, 888, 522, 972, -459, 272, 418, 206, 327, 285, -639, 959, -768, 195, -163, 884, 106, -713, -406, -870, 784, -110, 886, 378, 123, -271, -430, -577, -400, 882, 438, 238, 596, -384, -938, 291, 408, -708, 650, 849, -870, 773, 874, -238, 976, -86, 332, 257, -812, 997, -412, -475, -463, -889, -322, -657, 394, -584, -925, -494, -116, -309, -140, -660, -68, -826, -308, 628, -246, -412, 786, -537, 276, 872, -747, -776];
-		static readonly int[] b = [-84, -414, 30, -469, -814, -541, -27, -577, -889, -702, -663, -770, -22, -861, -319, -307, -713, -923, 45, -392, -895, -433, -329, -521, -250, -328, -728, -245, -855, -569, -199, -335, -663, -762, -663, -431, -416, -861, -156, 17, -17, -327, -425, 96, -355, -17, -229, -939, -870, -203, -623, -476, -248, 5, -68, -63, -150, 75, 29, 86, -258, 76, -257, -284, -345, -792, -891, -700, 93, -927, -370, -256, -767, -971, -464, -349, -447, -957, -69, -654, -602, 34, -582, -799, -170, -676, -288, -310, -37, -822, -209, -234, -429, -62, -887, -120, -62, -156, -180, -361];
-		[Benchmark]
-		public void IList()
+		List<int> ten;
+		List<int> hundred;
+		List<int> thousand;
+		List<int> hundredThousand;
+
+
+		public Benchmarks()
 		{
-			_ = Eb3yrLib.Maths.Maths.LerpSorted(500, a, b);
+			ten = Enumerable.Range(0, 10).ToList();
+			hundred = Enumerable.Range(0, 100).ToList();
+			thousand = Enumerable.Range(0, 1000).ToList();
+			hundredThousand = Enumerable.Range(0, 100_000).ToList();
 		}
 
 		[Benchmark]
-		public void IEnumerable()
+		public void RemoveCol10()
 		{
-			_ = Eb3yrLib.Maths.Maths.IEnumerableLerp(500, a, b);
+			_ = RemoveAtCol(ten, 1);
+		}
+
+		[Benchmark]
+		public void RemoveEnumerable10()
+		{
+			_ =RemoveAtEnumerable(ten, 1).ToList();
+		}
+
+		[Benchmark]
+		public void RemoveWhere10()
+		{
+			_ = RemoveAtWhere(ten, 1).ToList();
+		}
+
+		[Benchmark]
+		public void RemoveCol100()
+		{
+			_ = RemoveAtCol(hundred, 1).ToList();
+		}
+
+		[Benchmark]
+		public void RemoveEnumerable100()
+		{
+			_ = RemoveAtEnumerable(hundred, 1).ToList();
+		}
+
+		[Benchmark]
+		public void RemoveWhere100()
+		{
+			_ = RemoveAtWhere(hundred, 1).ToList();
+		}
+
+		[Benchmark]
+		public void RemoveCol1000()
+		{
+			_ = RemoveAtCol(thousand, 1);
+		}
+		
+		[Benchmark]
+		public void RemoveEnumerable1000()
+		{
+			_ = RemoveAtEnumerable(thousand, 1).ToList();
+		}
+		
+		[Benchmark]
+		public void RemoveWhere1000()
+		{
+			_ = RemoveAtWhere(thousand, 1).ToList();
+		}
+		
+		[Benchmark]
+		public void RemoveCol100000()
+		{
+			_ = RemoveAtCol(hundredThousand, 1);
+		}
+		
+		[Benchmark]
+		public void RemoveEnumerable100000()
+		{
+			_ = RemoveAtEnumerable(hundredThousand, 1).ToList();
+		}
+		
+		[Benchmark]
+		public void RemoveWhere100000()
+		{
+			_ = RemoveAtWhere(hundredThousand, 1).ToList();
+		}
+
+
+		public static List<T> RemoveAtCol<T>(List<T> l, int i)
+		{
+			return [.. l[..i], .. l[(i + 1)..]];
+		}
+
+		public static IEnumerable<T> RemoveAtEnumerable<T>(IEnumerable<T> en, int i)
+		{
+			var e = en.GetEnumerator();
+			int c = 0;
+			while (e.MoveNext())
+			{
+				if (c == i)
+					continue;
+
+				c++;
+				yield return e.Current;
+			}
+		}
+
+		public static IEnumerable<T> RemoveAtWhere<T>(IEnumerable<T> en, int i)
+		{
+			return en.Where((_, index) => index != i);
 		}
 	}
 }

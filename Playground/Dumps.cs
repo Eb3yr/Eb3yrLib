@@ -2,8 +2,10 @@
 using System.Drawing;
 using System.Numerics;
 using System.Collections;
+using Eb3yrLib.Aerodynamics;
+using ScottPlot;
 
-namespace Eb3yrLib
+namespace Playground
 {
 	public sealed class BoolOpsEnum<T> : IComparable, IComparable<BoolOpsEnum<T>>, IEquatable<BoolOpsEnum<T>> where T : INumber<T>
 	{
@@ -51,35 +53,6 @@ namespace Eb3yrLib
 		public override int GetHashCode()
 		{
 			return HashCode.Combine(_ID, _op.GetHashCode());
-		}
-	}
-
-	public struct Intermediary()
-	{
-		// An intermediary between System.Numerics.Vector2 and System.Drawing.Point that allows implicit casts to and from this intermediary, but unfortunately not to and from Vector2 and Point. 
-		public Vector2 Value;
-		public Intermediary(Vector2 vec2) : this() => Value = vec2;
-		public static implicit operator Vector2(Intermediary i) => i.Value;
-		public static implicit operator Intermediary(Vector2 vec2) => new(vec2);
-		public static implicit operator Point(Intermediary i) => new((int)Math.Round(i.Value.X, MidpointRounding.AwayFromZero), (int)Math.Round(i.Value.Y, MidpointRounding.AwayFromZero));
-		public static implicit operator Intermediary(Point p) => new(new Vector2(p.X, p.Y));
-
-		public static void Demo()
-		{
-			static void LemmeVec(Vector2 vec)
-			{
-				Console.WriteLine(vec);
-			}
-
-			static void LemmePoint(Point p)
-			{
-				Console.WriteLine(p);
-			}
-
-			Vector2 myVec = new(1f, 5f);
-			Intermediary inter = myVec;
-			LemmeVec(inter);
-			LemmePoint(inter);
 		}
 	}
 }
@@ -244,6 +217,70 @@ namespace Playground
 		{
 			Random rng = new();
 			return [.. collection.OrderBy((T item) => rng.NextSingle() - 0.5f)];
+		}
+	}
+
+	public static class Plotting
+	{
+		public static RootedCoordinateVector[] CoordVec((double x, double z)[,] coords, (double u, double w)[,] vecs, double maskAbove = 20)
+		{
+			var coordVecs = new RootedCoordinateVector[coords.Length];
+			int i = 0;
+			var cEnum = coords.GetEnumerator();
+			var vEnum = vecs.GetEnumerator();
+
+			while (cEnum.MoveNext() && vEnum.MoveNext())
+			{
+				var (x, z) = ((double x, double z))cEnum.Current;
+				var (u, w) = ((double u, double w))vEnum.Current;
+				if (double.Abs(double.Min(u, w)) > maskAbove)
+					u = w = 0;
+
+				coordVecs[i] = new(new Coordinates(x, z), new Vector2((float)u, (float)w));
+				i++;
+			}
+			return coordVecs;
+		}
+
+		public static Coordinates3d[,] Coord3D((double x, double z)[,] coords, double[,] stream, double maskAbove = 100)
+		{
+			var arr = new Coordinates3d[coords.GetLength(0), coords.GetLength(1)];
+			for (int i = 0; i < arr.GetLength(0); i++)
+				for (int j = 0; j < arr.GetLength(1); j++)
+					arr[i, j] = new Coordinates3d(coords[i, j].x, coords[i, j].z, stream[i, j]);
+
+			return arr;
+		}
+
+		public static void Main()
+		{
+			StreamFunction psi = (PotentialFlows.Vortex(6 * double.Pi, -1, 0) + PotentialFlows.Source(-8 * double.Pi, 2, 0) + PotentialFlows.Uniform(5, 0)).Sum();
+			psi = PotentialFlows.Vortex(10, 0, 0);
+
+
+
+
+			var plt = new Plot();
+			var grid = PotentialFlows.CoordGrid(-4, 4, -2, 2, 0.02, 0.02);
+
+			double gamma = -2.4 * double.Pi;
+			psi = PotentialFlows.Uniform(4.7) + PotentialFlows.Source(1.6);
+			psi = psi.Sum();
+
+			Console.WriteLine(psi(2, 4.1) - psi(1, 2.5));
+
+			var stream = PotentialFlows.StreamGrid(grid, psi);
+			var c3d = Coord3D(grid, stream);  // This and stream show that I'm getting the correct stream values for x and z -> uniform depends solely on z
+											  //plt.Add.Heatmap(c3d);	// No good, stinky, arranges based on array index, NOT on coordinate? Even though it still has coordinates? what
+			var cl = plt.Add.ContourLines(c3d, 50); // : )
+			cl.LabelStyle.IsVisible = false;
+			cl.Colormap = new ScottPlot.Colormaps.Turbo();
+			cl.LineWidth = 2;
+			cl.LineStyle.Rounded = true;
+			plt.SavePng("pltTest.png", 1600, 1200);
+
+			var VelFunc = psi.GetVelocityFunc();
+			Console.WriteLine(VelFunc(2.3, 0));
 		}
 	}
 }

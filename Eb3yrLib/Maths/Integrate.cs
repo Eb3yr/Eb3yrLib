@@ -64,7 +64,7 @@ namespace Eb3yrLib.Maths
 		/// <param name="x"></param>
 		/// <param name="y"></param>
 		/// <param name="order">Order of the polynomial to fit to</param>
-		public static double DiscreteCurveFitPoly(double[]x, double[]y, int order = 8)
+		public static double DiscreteCurveFitPoly(double[]x, double[]y, int order = 3)
 		{
 			Func<double, double> fx = Fit.PolynomialFunc(x, y, order);
 			return Integrate.OnClosedInterval(fx, x.Min(), x.Max());

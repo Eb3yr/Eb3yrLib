@@ -9,7 +9,7 @@ namespace BenchmarkProj
 		public static void Main(string[] args)
 		{
 			var config = DefaultConfig.Instance;
-			
+
 			var summary = BenchmarkRunner.Run<Benchmarks>(config, args);
 
 			// Use this to select benchmarks from the console:

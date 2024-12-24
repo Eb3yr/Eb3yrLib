@@ -2,6 +2,7 @@
 
 namespace Eb3yrLib.Extensions
 {
+	/// <summary>This is stupid. Why would you use this?</summary>
 	public class CircularEnumerator<T> : IEnumerator<T>
 	{
 		public CircularEnumerator(IEnumerator<T> enumerator) => _enumerator = enumerator;
