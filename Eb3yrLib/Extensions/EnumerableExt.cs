@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Eb3yrLib.Extensions
 {
@@ -16,6 +17,7 @@ namespace Eb3yrLib.Extensions
 				yield return populator();
 		}
 
+		[OverloadResolutionPriority(0)]
 		public static string ToFormattedString<T>(this IEnumerable<T> enumerable, char delimiter = ',', bool braces = true)
 		{
 			string outStr = "";
@@ -23,7 +25,7 @@ namespace Eb3yrLib.Extensions
 			foreach (var a in enumerable)
 			{
 				nonZero = true;
-				if (a != null) 
+				if (a != null)
 					outStr += a.ToString();
 
 				outStr += delimiter;
@@ -31,6 +33,29 @@ namespace Eb3yrLib.Extensions
 
 			if (nonZero)
 				outStr = outStr.Remove(outStr.Length - 1);	// Remove last delimiter
+
+			if (braces)
+				outStr = "[" + outStr + "]";
+
+			return outStr;
+		}
+
+		[OverloadResolutionPriority(1)]
+		public static string ToFormattedString<T>(this IEnumerable<IEnumerable<T>> enumerable, char delimiter = ',', bool braces = true)
+		{
+			string outStr = "";
+			bool nonZero = false;
+			foreach (var a in enumerable)
+			{
+				nonZero = true;
+				if (a != null)
+					outStr += a.ToFormattedString();
+
+				outStr += delimiter;
+			}
+
+			if (nonZero)
+				outStr = outStr.Remove(outStr.Length - 1);  // Remove last delimiter
 
 			if (braces)
 				outStr = "[" + outStr + "]";
