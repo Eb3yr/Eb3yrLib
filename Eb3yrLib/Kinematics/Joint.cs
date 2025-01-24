@@ -5,6 +5,7 @@ namespace Eb3yrLib.Kinematics
     /// <summary>
     /// A joint in a chain used for inverse kinematics. Old, not recommended, use an IList of vectors to store this info with the Kinematics class instead unless your situation calls for acting upon a custom data type instead.
     /// </summary>
+    [Obsolete()]
     public struct Joint
     {
         public float length;

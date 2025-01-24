@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace Eb3yrLib.Extensions
@@ -19,7 +20,10 @@ namespace Eb3yrLib.Extensions
 
 		public static string ToFormattedString<T>(this IEnumerable<T> enumerable, char delimiter = ',', bool braces = true)
 		{
-			System.Text.StringBuilder outStr = braces ? new('[') : new();
+			System.Text.StringBuilder outStr = new();
+			if (braces)
+				outStr.Append('[');
+
 			outStr.AppendJoin(delimiter, enumerable);
 			if (braces)
 				outStr.Append(']');
@@ -29,7 +33,10 @@ namespace Eb3yrLib.Extensions
 
 		public static string ToFormattedString2D<T>(this IEnumerable<IEnumerable<T>> enumerable, char delimiter = ',', bool braces = true)
 		{
-			System.Text.StringBuilder outStr = braces ? new('[') : new();
+			System.Text.StringBuilder outStr = new();
+			if (braces)
+				outStr.Append('[');
+
 			bool nonZero = false;
 			foreach (var a in enumerable)
 			{

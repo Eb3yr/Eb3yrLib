@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 
+// Present in this namespace instead of Collections because of GetCircularEnumerator in IEnumerableExt.cs
 namespace Eb3yrLib.Extensions
 {
-	/// <summary>This is stupid. Why would you use this?</summary>
+	/// <summary>This is stupid. Why did I this?</summary>
 	public class CircularEnumerator<T> : IEnumerator<T>
 	{
 		public CircularEnumerator(IEnumerator<T> enumerator) => _enumerator = enumerator;

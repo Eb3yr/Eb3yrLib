@@ -2,7 +2,7 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Running;
 
-namespace BenchmarkProj
+namespace Benchmarks
 {
 	public class Program
 	{

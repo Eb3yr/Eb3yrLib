@@ -5,7 +5,7 @@ namespace Eb3yrLib.Collections
 {
 	/// <summary>A 2D array implementation using a 1D backing array</summary>
 	/// <remarks> y dimension elements for a given x index are contiguous in the backing array. Accessing all y elements for a given x index performs like a jagged or 1D array, but accessing all of x for a given y performs moderately worse than a multidimensional array. Ideally enumerate manually. While it implements IEnumerable<T>, avoid LINQ where unecessary due to significant overhead on fast operations</remarks>
-	public readonly struct Array2D<T> : IReadOnlyList<T>   // ReadOnly to avoid implementing everything else. It's still mutable (:
+	public readonly struct Array2D<T> : IReadOnlyList<T>   // ReadOnly to avoid implementing list-specific operators that don't apply to arrays. It's still mutable (:
 	{
 		/// <param name="lengthX">Length of the first dimension</param>
 		/// <param name="lengthY">Length of the second dimension</param>

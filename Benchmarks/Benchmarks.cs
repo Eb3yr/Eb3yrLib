@@ -1,19 +1,10 @@
-﻿using BenchmarkDotNet;
-using BenchmarkDotNet.Attributes;
-using Eb3yrLib;
-using Eb3yrLib.Extensions;
-using Eb3yrLib.Mathematics;
+﻿using BenchmarkDotNet.Attributes;
 using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Globalization;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
-namespace BenchmarkProj
+namespace Benchmarks
 {
 	[MemoryDiagnoser(true)]
 	public class Benchmarks
@@ -93,7 +84,7 @@ namespace BenchmarkProj
 		}
 
 		[Benchmark]
-		public unsafe void UnsafeBitCast()	// AsVector4 uses this
+		public unsafe void UnsafeBitCast()  // AsVector4 uses this
 		{
 			for (int i = 0; i < 1_000; i++)
 			{
@@ -102,7 +93,7 @@ namespace BenchmarkProj
 		}
 
 		[Benchmark]
-		public unsafe void UnsafeReadUnaligned()	// Used by Unsafe.BitCast, along with a check for sizeof(TFrom) == sizeof(TTo)
+		public unsafe void UnsafeReadUnaligned()    // Used by Unsafe.BitCast, along with a check for sizeof(TFrom) == sizeof(TTo)
 		{
 			for (int i = 0; i < 1_000; i++)
 			{

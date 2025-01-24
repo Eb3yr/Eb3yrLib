@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Eb3yrLib.Maths
+namespace Eb3yrLib.Mathematics
 {
 	public static class FloatingPointExtensions
 	{

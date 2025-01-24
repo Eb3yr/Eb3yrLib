@@ -16,8 +16,4 @@
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.14.0" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Eb3yrLib\Eb3yrLib.csproj" />
-    <ProjectReference Include="..\Playground\Playground.csproj" />
-  </ItemGroup>
 </Project>

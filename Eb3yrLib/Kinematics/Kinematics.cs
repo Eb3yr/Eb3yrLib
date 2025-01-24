@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 namespace Eb3yrLib.Kinematics
 {
 	/// <summary>Static class that contains methods for inverse kinematics</summary>
+	/// <remarks>Most methods have an in IList parameter. These are modified and behave as ref params. They exist because arrays only implement IList, not IList<T>, and laziness because we can't simply ref an array from a Chain into an IList<Vector2> method overload</remarks>
 	public static class Kinematics
 	{
 		/// <summary>
@@ -25,7 +26,7 @@ namespace Eb3yrLib.Kinematics
 				float la = Vector2.Distance(joints[1], joints[0]);
 				float lb = Vector2.Distance(joints[2], joints[1]);
 				float at = Vector2.Distance(target, joints[0]);
-				if (at == 0)	// avoid divide-by-zeroes if the target overlaps the root
+				if (at == 0)    // avoid divide-by-zeroes if the target overlaps the root
 				{
 					joints[1] = joints[0] + la * Vector2.UnitX;
 					joints[2] = target;
@@ -72,7 +73,7 @@ namespace Eb3yrLib.Kinematics
 				for (int i = 0; i < joints.Count - 1; i++)
 				{
 					float r = Vector3.Distance(joints[i], target);
-					float lambda = di[i] / r;	// Cannot overlap target, no risk of divide by zero
+					float lambda = di[i] / r;   // Cannot overlap target, no risk of divide by zero
 					joints[i + 1] = (1f - lambda) * joints[i] + lambda * target;
 				}
 			}
@@ -82,8 +83,8 @@ namespace Eb3yrLib.Kinematics
 				float dif_A;
 				do
 				{
-					dif_A = Vector3.DistanceSquared(joints[joints.Count - 1], target);	// Micro-optimisation to avoid sqrt every iteration. Reflected in while condition
-					// Forwards-reaching:
+					dif_A = Vector3.DistanceSquared(joints[joints.Count - 1], target);  // Micro-optimisation to avoid sqrt every iteration. Reflected in while condition
+																						// Forwards-reaching:
 					joints[joints.Count - 1] = target;
 					for (int i = joints.Count - 2; i > -1; i--)
 					{
@@ -106,23 +107,34 @@ namespace Eb3yrLib.Kinematics
 			return joints;
 		}
 
-		/// <summary>Use the FABRIK (forward and backward reaching inverse kinematics) method to solve the inverse kinematics problem</summary>
-		/// <param name="joints">IList of joint positions in 2D space, including the end effector</param>
+		/// <summary>Use the FABRIK method to solve the inverse kinematics problem</summary>
+		/// <param name="joints">Joint positions in 2D space, including the end effector</param>
 		/// <param name="target">Target position</param>
 		/// <param name="tolerance">Acceptable tolerance to end iterations and return</param>
-		public static IList<Vector2> Fabrik2D(IList<Vector2> joints, Vector2 target, float tolerance = 0.1f)
+		public static void Fabrik2D(in IList<Vector2> joints, Vector2 target, float tolerance = 0.1f)
 		{
-			float dist = Vector2.Distance(joints[0], target);
 			float[] di = new float[joints.Count - 1];  // Distance from index joint to next
 			for (int i = 0; i < joints.Count - 1; i++)
 				di[i] = Vector2.Distance(joints[i + 1], joints[i]);
 
-			if (dist > di.Sum())    // if unreachable
+			Fabrik2D(joints, di, target, tolerance);
+		}
+
+		/// <summary>Use the FABRIK method to solve the inverse kinematics problem</summary>
+		/// <param name="joints">Joint positions in 2D space, including the end effector</param>
+		/// <param name="lengths">Length of each joint. The final joint should have a length of 0 or not exist</param>
+		/// <param name="target">Target position</param>
+		/// <param name="tolerance">Acceptable tolerance to end iterations and return</param>
+		public static void Fabrik2D(in IList<Vector2> joints, IList<float> lengths, Vector2 target, float tolerance = 0.1f)
+		{
+			float dist = Vector2.Distance(joints[0], target);
+
+			if (dist > lengths.Sum())    // if unreachable
 			{
 				for (int i = 0; i < joints.Count - 1; i++)
 				{
 					float r = Vector2.Distance(joints[i], target);
-					float lambda = di[i] / r;   // Cannot overlap target, no risk of divide by zero
+					float lambda = lengths[i] / r;   // Cannot overlap target, no risk of divide by zero
 					joints[i + 1] = (1f - lambda) * joints[i] + lambda * target;
 				}
 			}
@@ -132,14 +144,14 @@ namespace Eb3yrLib.Kinematics
 				float dif_A;
 				do
 				{
-					dif_A = Vector2.DistanceSquared(joints[joints.Count - 1], target);	// Micro-optimisation to avoid sqrt every iteration. Reflected in while condition
+					dif_A = Vector2.DistanceSquared(joints[joints.Count - 1], target);
 					// Forwards-reaching:
 					joints[joints.Count - 1] = target;
 					for (int i = joints.Count - 2; i > -1; i--)
 					{
 						float r = Vector2.Distance(joints[i + 1], joints[i]);
 						if (r == 0) continue;
-						float lambda = di[i] / r;
+						float lambda = lengths[i] / r;
 						joints[i] = (1f - lambda) * joints[i + 1] + lambda * joints[i];
 					}
 					// Backwards-reaching:
@@ -148,12 +160,20 @@ namespace Eb3yrLib.Kinematics
 					{
 						float r = Vector2.Distance(joints[i + 1], joints[i]);
 						if (r == 0) continue;
-						float lambda = di[i] / r;
+						float lambda = lengths[i] / r;
 						joints[i + 1] = (1f - lambda) * joints[i] + lambda * joints[i + 1];
 					}
 				} while (dif_A > tolerance * tolerance);
 			}
-			return joints;
+		}
+
+		/// <summary>Use the FABRIK method to solve the inverse kinematics problem</summary>
+		/// <param name="chain">A class that implements abstract Chain</param>
+		/// <param name="target">Target position</param>
+		/// <param name="tolerance">Acceptable tolerance to end iterations and return</param>
+		public static void Fabrik2D(Chain chain, Vector2 target, float tolerance = 0.1f)
+		{
+			Fabrik2D(chain.Joints, chain.Lengths, target, tolerance);
 		}
 	}
 }

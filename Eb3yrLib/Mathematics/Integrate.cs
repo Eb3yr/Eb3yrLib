@@ -2,7 +2,7 @@
 using System.Numerics;
 using Eb3yrLib.Extensions;
 
-namespace Eb3yrLib.Maths
+namespace Eb3yrLib.Mathematics
 {
 	public static class CustomIntegrate
 	{
