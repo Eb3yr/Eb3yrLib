@@ -1,146 +1,97 @@
 ﻿using BenchmarkDotNet.Attributes;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 
 namespace Benchmarks
 {
 	[MemoryDiagnoser(true)]
 	public class Benchmarks
 	{
-		Quaternion q = new();
-		Vector4 v4;
-		public Benchmarks()
+		string str;
+	
+		public char value => str[str.Length - 1];   // Most possible work to reach, excl. duplicates
+	
+		[Params(8, 64, 2048, 16384)]
+		public int Length;
+	
+		[GlobalSetup]
+		public void GlobalSetup()
 		{
-
+			Span<char> cc = new char[Length];
+			for (ushort i = 0; i < Length; i++)
+				cc[i] = (char)i;
+	
+			// Add some duplicates
+			//Random rng = new(0);
+			//for (int j = 0; j < Length / 32 + rng.Next(2); j++)
+			//	cc[rng.Next(0, Length)] = (char)rng.Next(0, Length);
+	
+			str = new(cc);
+			Debug.Assert(IndexOf() == IndexOfSimd(), "Mismatched results");
 		}
-
+	
 		[Benchmark(Baseline = true)]
-		public void AsVector4()
+		public int IndexOf()
 		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = q.AsVector4();
-			}
+			return str.IndexOf(value);
 		}
-
+	
 		[Benchmark]
-		public void CloneOfAsVector4AggressiveInlining()
+		public unsafe int IndexOfSimd()
 		{
-			for (int i = 0; i < 1_000; i++)
+			int i = 0;
+			fixed (char* ptr = str)
 			{
-				v4 = q.AsVector4AggressiveInlining();
+				if (str.Length > 16)
+				{
+					Vector<ushort> vec;
+					Vector<ushort> values = Vector.Create<ushort>(value);
+					for (; i < str.Length - Vector<ushort>.Count; i += Vector<ushort>.Count)
+					{
+						vec = Unsafe.Read<Vector<ushort>>(ptr + i);
+						if (Vector.EqualsAny(vec, values))
+						{
+							int max = i + Vector<ushort>.Count;
+							while (i < max)
+							{
+								if (ptr[i++] == value ||
+									ptr[i++] == value ||
+									ptr[i++] == value ||
+									ptr[i++] == value)
+									return i - 1;
+							}
+						}
+					}
+				}
+
+				int remaining = str.Length - i;
+				while (remaining > 0)
+				{
+					switch (remaining & 3)
+					{
+						case 0:
+							if (ptr[i++] == value) return i - 1;
+							goto case 3;
+						case 3:
+							if (ptr[i++] == value) return i - 1;
+							goto case 2;
+						case 2:
+							if (ptr[i++] == value) return i - 1;
+							goto case 1;
+						case 1:
+							if (ptr[i++] == value) return i - 1;
+							break;
+					}
+					remaining -= 4;
+				}
 			}
-		}
-
-		[Benchmark]
-		public void CloneOfAsVector4NoInlining()
-		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = q.AsVectorNoInlining();
-			}
-		}
-
-		[Benchmark]
-		public void CloneOfAsVector4NoAttribute()
-		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = q.AsVector4NoAttribute();
-			}
-		}
-
-		[Benchmark]
-		public unsafe void MemoryMarshalReadWrite()
-		{
-			Span<byte> s = new byte[sizeof(Quaternion)];
-			for (int i = 0; i < 1_000; i++)
-			{
-				MemoryMarshal.Write(s, q);
-				v4 = MemoryMarshal.Read<Vector4>(s);
-			}
-		}
-
-		[Benchmark]
-		public unsafe void MemoryMarshalReadWriteStackAlloc()
-		{
-			Span<byte> s = stackalloc byte[sizeof(Quaternion)];
-			for (int i = 0; i < 1_000; i++)
-			{
-				MemoryMarshal.Write(s, q);
-				v4 = MemoryMarshal.Read<Vector4>(s);
-			}
-		}
-
-		[Benchmark]
-		public void CopyFields()
-		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = new Vector4(q.X, q.Y, q.Z, q.W);
-			}
-		}
-
-		[Benchmark]
-		public unsafe void UnsafeBitCast()  // AsVector4 uses this
-		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = Unsafe.BitCast<Quaternion, Vector4>(q);
-			}
-		}
-
-		[Benchmark]
-		public unsafe void UnsafeReadUnaligned()    // Used by Unsafe.BitCast, along with a check for sizeof(TFrom) == sizeof(TTo)
-		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = Unsafe.ReadUnaligned<Vector4>(ref Unsafe.As<Quaternion, byte>(ref q));
-			}
-		}
-
-		[Benchmark]
-		public unsafe void UnsafeRead()
-		{
-			for (int i = 0; i < 1_000; i++)
-			{
-				v4 = Unsafe.Read<Vector4>(Unsafe.AsPointer(ref q));
-			}
-		}
-	}
-
-	// Clones of System.Numerics.Quaternion.Extensions Vector.AsVector4(this Quaternion value), without its Intrinsic 
-	public static class VectorExt
-	{
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		public static Vector4 AsVector4AggressiveInlining(this Quaternion value)
-		{
-#if MONO
-            return Unsafe.As<Quaternion, Vector4>(ref value);
-#else
-			return Unsafe.BitCast<Quaternion, Vector4>(value);
-#endif
-		}
-
-		[MethodImpl(MethodImplOptions.NoInlining)]
-		public static Vector4 AsVectorNoInlining(this Quaternion value)
-		{
-#if MONO
-            return Unsafe.As<Quaternion, Vector4>(ref value);
-#else
-			return Unsafe.BitCast<Quaternion, Vector4>(value);
-#endif
-		}
-
-		public static Vector4 AsVector4NoAttribute(this Quaternion value)
-		{
-#if MONO
-            return Unsafe.As<Quaternion, Vector4>(ref value);
-#else
-			return Unsafe.BitCast<Quaternion, Vector4>(value);
-#endif
+			return -1;
 		}
 	}
 }
