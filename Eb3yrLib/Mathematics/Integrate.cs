@@ -1,73 +1,139 @@
 ﻿using MathNet.Numerics;
 using System.Numerics;
 using Eb3yrLib.Extensions;
+using System.Runtime.CompilerServices;
+using System.Diagnostics.CodeAnalysis;
+using System.Numerics.Tensors;
 
 namespace Eb3yrLib.Mathematics
 {
-	public static class CustomIntegrate
+	public static class Integrate
 	{
 		/// <summary>Integrate a set of data points using the trapezium rule. Permits varying distances between x values and an unordered set of x values
-		/// <param name="x">An array of x values</param>
-		/// <param name="y">An array of f(x) values</param>
-		/// <exception cref="ArgumentException"></exception>
-		public static double Trapz(double[] x, double[] y)
+		/// <param name="x">A span of x values</param>
+		/// <param name="y">A span of f(x) values</param>
+		/// <exception cref="ArgumentException">Spans have mismatched lengths or lengths of less than two</exception>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static unsafe T Trapz<T>(T[] x, T[] y) where T : unmanaged, INumberBase<T> => Trapz(new ReadOnlySpan<T>(x), new ReadOnlySpan<T>(y));
+
+		/// <summary>Integrate a set of data points using the trapezium rule. Permits varying distances between x values and an unordered set of x values
+		/// <param name="x">A span of x values</param>
+		/// <param name="y">A span of f(x) values</param>
+		/// <exception cref="ArgumentException">Spans have mismatched lengths or lengths of less than two</exception>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static unsafe T Trapz<T>(Span<T> x, Span<T> y) where T : unmanaged, INumberBase<T> => Trapz((ReadOnlySpan<T>)x, (ReadOnlySpan<T>)y);
+
+		/// <summary>Integrate a set of data points using the trapezium rule. Permits varying distances between x values and an unordered set of x values
+		/// <param name="x">A span of x values</param>
+		/// <param name="y">A span of f(x) values</param>
+		/// <exception cref="ArgumentException">Spans have mismatched lengths or lengths of less than two</exception>
+		public static unsafe T Trapz<T>(ReadOnlySpan<T> x, ReadOnlySpan<T> y) where T : unmanaged, INumberBase<T>
 		{
-			if (x.Length != y.Length)
-				throw new ArgumentException("Mismatched array lengths");
+			IntegrationHelpers.ThrowIfNotMatchOrLessThanTwo(x, y);
 
-			if (x.Length < 2)
-				throw new ArgumentException("Arrays must be of length two or greater");
-
-			if (!x.IsOrderedAscending())
-				Array.Sort(x, y);   // Keep x sorted and re-arrange y so that it matches the new arrangement of x
-
-			double result = 0;
-			for (int i = 0; i < x.Length - 1; i++)	// I could do this with IEnumerable because I'm just iterating each one
-				result += 0.5 * (y[i + 1] + y[i]) * (x[i + 1] - x[i]);	// 0.5(a+b)h
-			
-			return result;
-		}
-
-		/// <summary>Integrate a set of data points using the trapezium rule. Permits varying distances between x values and an unordered set of x values</summary>
-		/// <param name="x">An ordered enumerable of x values of length >= 2</param>
-		/// <param name="y">An enumerable of f(x) values of length >= 2</param>
-		/// <exception cref="ArgumentException"></exception>
-		public static T Trapz<T>(IEnumerable<T> x, IEnumerable<T> y, bool allowUnsorted = false) where T : IFloatingPoint<T>
-		{
-			if (!x.IsOrderedAscending())
-			{
-				if (allowUnsorted)
-					x.Sort(y);
-				else throw new ArgumentException("x is not sorted in ascending order");
-			}
+			// Use the unrolled loop implementation if hardware acceleration for type T isn't supported
+			if (!Vector.IsHardwareAccelerated || !Vector<T>.IsSupported)
+				return TrapzSoftwareFallback(x, y);
 
 			T result = T.Zero;
-			T half = (T)Convert.ChangeType(0.5, typeof(T), System.Globalization.CultureInfo.InvariantCulture);
 
-			var xEnum = x.GetEnumerator();
-			var yEnum = y.GetEnumerator();
-			xEnum.MoveNext();
-			yEnum.MoveNext();
-			T xPrev = xEnum.Current;
-			T yPrev = yEnum.Current;
-
-			while (xEnum.MoveNext() && yEnum.MoveNext())
+			// TensorPrimitives implementation is only faster above lengths of ~2048-2560, use Vector<T> otherwise
+			if (x.Length < 2560)
 			{
-				result += half * (yEnum.Current + yPrev) * (xEnum.Current - xPrev);
-				xPrev = xEnum.Current;
-				yPrev = yEnum.Current;
+				fixed (T* xPtr = x)
+				fixed (T* yPtr = y)
+				{
+					int i = 0;
+					int remainder = (x.Length - 1) / Vector<T>.Count;
+					while (remainder > 0)
+					{
+						result += Vector.Sum(
+							Vector.Multiply(
+								Vector.Add(Vector.Load(yPtr + i), Vector.Load(yPtr + i + 1)),
+								Vector.Subtract(Vector.Load(xPtr + i + 1), Vector.Load(xPtr + i))
+							)
+						);
+
+						remainder -= Vector<T>.Count;
+						i += Vector<T>.Count;
+					}
+
+					while (i < x.Length - 1)
+						result += (yPtr[i + 1] + yPtr[i]) * (xPtr[i + 1] - xPtr[i++]);
+				}
 			}
-			return result;
+			else
+			{
+				// Avoid heap allocation by re-using a smaller stackalloc destination array
+				const int stackLim = 1024;   // Multiple of 16 for vector loading
+				int remainder = x.Length;
+				int minOfLength = int.Min(x.Length - 1, stackLim);
+				Span<T> dest = stackalloc T[minOfLength];
+				Span<T> xDiff = stackalloc T[minOfLength];
+
+				int offset = 0;
+				while (remainder > stackLim)
+				{
+					TensorPrimitives.Subtract(x.Slice(1 + offset, stackLim), x.Slice(offset, stackLim), xDiff);
+					TensorPrimitives.Add(y.Slice(1 + offset, stackLim), y.Slice(offset, stackLim), dest);
+					TensorPrimitives.Multiply(dest, xDiff, dest);
+					result += TensorPrimitives.Sum<T>(dest);
+
+					offset += stackLim;
+					remainder -= stackLim;
+				}
+
+				// We slice the destination spans so that the lengths aren't mismatched
+				TensorPrimitives.Subtract(x.Slice(1 + offset, remainder - 1), x.Slice(offset, remainder - 1), xDiff.Slice(0, remainder - 1));
+				TensorPrimitives.Add(y.Slice(1 + offset, remainder - 1), y.Slice(offset, remainder - 1), dest.Slice(0, remainder - 1));
+				TensorPrimitives.Multiply(dest.Slice(0, remainder - 1), xDiff.Slice(0, remainder - 1), dest.Slice(0, remainder - 1));
+				result += TensorPrimitives.Sum<T>(dest.Slice(0, remainder - 1));
+			}
+
+			return result / (T.One + T.One);
 		}
 
-		/// <summary>Integrate a set of data points by integrating the function returned by curve fitting the data points to a polynomial</summary>
-		/// <param name="x"></param>
-		/// <param name="y"></param>
-		/// <param name="order">Order of the polynomial to fit to</param>
-		public static double DiscreteCurveFitPoly(double[]x, double[]y, int order = 3)
+		/// <summary>Fallback if vectoristaion is unsupported</summary>
+		private static unsafe T TrapzSoftwareFallback<T>(ReadOnlySpan<T> x, ReadOnlySpan<T> y) where T : unmanaged, INumberBase<T>
 		{
-			Func<double, double> fx = Fit.PolynomialFunc(x, y, order);
-			return Integrate.OnClosedInterval(fx, x.Min(), x.Max());
+			T result = T.Zero;
+
+			fixed (T* xPtr = x)
+			fixed (T* yPtr = y)
+			{
+				int i = 0;
+				int remainder = (x.Length - 1) / 4;
+
+				while (remainder > 0)
+				{
+					result += (yPtr[i + 1] + yPtr[i]) * (xPtr[i + 1] - xPtr[i++]);
+					result += (yPtr[i + 1] + yPtr[i]) * (xPtr[i + 1] - xPtr[i++]);
+					result += (yPtr[i + 1] + yPtr[i]) * (xPtr[i + 1] - xPtr[i++]);
+					result += (yPtr[i + 1] + yPtr[i]) * (xPtr[i + 1] - xPtr[i++]);
+					remainder -= 4;
+				}
+
+				while (i < x.Length - 1)
+					result += (yPtr[i + 1] + yPtr[i]) * (xPtr[i + 1] - xPtr[i++]);
+			}
+			result /= (T.One + T.One);
+
+			return result;
+		}
+	}
+
+	file static class IntegrationHelpers
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal static void ThrowIfNotMatchOrLessThanTwo<T>(ReadOnlySpan<T> x, ReadOnlySpan<T> y)
+		{
+			if (x.Length != y.Length)
+				ThrowHelper.ThrowArgumentException($"Mismatched span lengths. x length: {x.Length}, y length: {x.Length}");
+
+			if (x.Length < 2)
+				ThrowHelper.ThrowArgumentException($"Spans must be of length two or greater. x length: {x.Length}, y length: {x.Length}");
+
+			return;
 		}
 	}
 }
