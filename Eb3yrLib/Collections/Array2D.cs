@@ -3,9 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Eb3yrLib.Collections
 {
-	/// <summary>A 2D array implementation using a 1D backing array</summary>
-	/// <remarks> y dimension elements for a given x index are contiguous in the backing array. Accessing all y elements for a given x index performs like a jagged or 1D array, but accessing all of x for a given y performs moderately worse than a multidimensional array. Ideally enumerate manually. While it implements IEnumerable<T>, avoid LINQ where unecessary due to significant overhead on fast operations</remarks>
-	public readonly struct Array2D<T> : IReadOnlyList<T>   // ReadOnly to avoid implementing list-specific operators that don't apply to arrays. It's still mutable (:
+	/// <summary>A 2D fixed-length array implementation using a 1D backing array</summary>
+	/// <remarks> y dimension elements for a given x index are contiguous in the backing array. Accessing all y elements for a given x index performs like a jagged or 1D array, but accessing all of x for a given y performs moderately worse than a multidimensional array. Ideally enumerate manually, while it implements IEnumerable<T>, avoid LINQ where unecessary</remarks>
+	public readonly struct Array2D<T> : IList<T>
 	{
 		/// <param name="lengthX">Length of the first dimension</param>
 		/// <param name="lengthY">Length of the second dimension</param>
@@ -38,7 +38,13 @@ namespace Eb3yrLib.Collections
 
 		public int Count => values.Length;
 
-		public T this[int index] => values[index];
+		public bool IsReadOnly => false;
+
+		public T this[int index]
+		{
+			get => values[index];
+			set => values[index] = value;
+		}
 
 		public T this[int x, int y]
 		{
@@ -48,13 +54,12 @@ namespace Eb3yrLib.Collections
 
 		/// <summary>Returns the length of the array in the given dimension</summary>
 		/// <param name="dimension">Which dimension to get the length of. -1 will give the product of each dimension's lengths (the length of the backing 1D array)</param>
-		public int Length(int dimension = -1)
+		public int Length(int dimension = 0)
 		{
 			return dimension switch
 			{
 				0 => xBound + 1,
 				1 => yBound + 1,
-				-1 => values.Length,
 				_ => throw new ArgumentOutOfRangeException(message: "dimension must be zero or one.", null)
 			};
 		}
@@ -66,5 +71,33 @@ namespace Eb3yrLib.Collections
 		public IEnumerator<T> GetEnumerator() => values.AsEnumerable().GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
+
+		public int IndexOf(T item) => Array.IndexOf(values, item);
+
+		public void Insert(int index, T item)
+		{
+			throw new NotSupportedException("Inserting items not supported on a fixed-length Array2D");
+		}
+
+		public void RemoveAt(int index)
+		{
+			throw new NotSupportedException("Removing items not supported on a fixed-length Array2D");
+		}
+
+		public void Add(T item)
+		{
+			throw new NotSupportedException("Adding items not supported on a fixed-length Array2D");
+		}
+
+		public void Clear() => Array.Clear(values);
+
+		public bool Contains(T item) => Array.IndexOf(values, item) is -1;
+
+		public void CopyTo(T[] array, int arrayIndex) => values.CopyTo(array, arrayIndex);
+
+		public bool Remove(T item)
+		{
+			throw new NotSupportedException("Removing items not supported on a fixed-length Array2D");
+		}
 	}
 }
