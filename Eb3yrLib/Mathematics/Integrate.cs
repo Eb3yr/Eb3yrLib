@@ -128,10 +128,10 @@ namespace Eb3yrLib.Mathematics
 		internal static void ThrowIfNotMatchOrLessThanTwo<T>(ReadOnlySpan<T> x, ReadOnlySpan<T> y)
 		{
 			if (x.Length != y.Length)
-				ThrowHelper.ThrowArgumentException($"Mismatched span lengths. x length: {x.Length}, y length: {x.Length}");
+				ThrowHelpers.ThrowArgumentException($"Mismatched span lengths. x length: {x.Length}, y length: {x.Length}");
 
 			if (x.Length < 2)
-				ThrowHelper.ThrowArgumentException($"Spans must be of length two or greater. x length: {x.Length}, y length: {x.Length}");
+				ThrowHelpers.ThrowArgumentException($"Spans must be of length two or greater. x length: {x.Length}, y length: {x.Length}");
 
 			return;
 		}

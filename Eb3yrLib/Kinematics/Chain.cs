@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -16,17 +17,21 @@ namespace Eb3yrLib.Kinematics
 
 		public Chain(int count)
 		{
-			Lengths = new float[count];
+			if (count < 2)
+				throw new ArgumentException("Count must be greater than one.");
+
+			Lengths = new float[count - 1];
 			Joints = new Vector2[count];
 		}
 
-		public Chain(float[] lengths) : this(lengths.Length)
+		public Chain(float[] lengths) : this(lengths.Length + 1)
 		{
 			lengths.CopyTo(Lengths, 0);
 		}
 
 		public Chain(float[] lengths, Vector2[] joints) : this(lengths)
 		{
+			Debug.Assert(lengths.Length + 1 == joints.Length, "Mismatched joints and lengths. lengths should have a length one less than joints.");
 			joints.CopyTo(Joints, 0);
 		}
 	}

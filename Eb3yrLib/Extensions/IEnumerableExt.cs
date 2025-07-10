@@ -24,11 +24,16 @@ namespace Eb3yrLib.Extensions
 			if (braces)
 				outStr.Append('[');
 
-			outStr.AppendJoin(delimiter, enumerable);
+			_ = outStr.AppendJoin(delimiter, enumerable);
 			if (braces)
 				outStr.Append(']');
 
 			return outStr.ToString();
+		}
+
+		public static string ToArrayString<T>(this Span<T> span, char delimiter = ',', bool braces = true)
+		{
+			throw new NotImplementedException();
 		}
 
 		public static string ToFormattedString2D<T>(this IEnumerable<IEnumerable<T>> enumerable, char delimiter = ',', bool braces = true)
@@ -110,51 +115,26 @@ namespace Eb3yrLib.Extensions
 			}
 		}
 
-		/// <summary>Sorts an enumerable by converting it to an array and using Array.Sort</summary>
-		public static IList<T> Sort<T>(this IEnumerable<T> enumerable, IComparer<T>? comparer = null) where T : IComparable<T>
-		{
-			T[] arr = enumerable.ToArray();
-			comparer ??= Comparer<T>.Default;
-			Array.Sort(arr, comparer);
-			return arr;
-		}
-
-		/// <summary>Sorts a pair of enumerables based on the elements in the first enumerable</summary>
-		/// <param name="enumerable">Enumerable to be sorted on</param>
-		/// <param name="other">Enumerable that matches the sorting of the first enumerable</param>
-		/// <param name="comparer">Optional comparer. If null the default comparer is used</param>
-		public static ValueTuple<IList<T>, IList<T>> Sort<T>(this IEnumerable<T> enumerable, IEnumerable<T> other, IComparer<T>? comparer = null) where T : IComparable<T>
-		{
-			T[] arr = enumerable.ToArray();
-			T[] otherArr = other.ToArray();
-			comparer ??= Comparer<T>.Default;
-			Array.Sort(arr, otherArr, comparer);
-			return (arr, otherArr);
-		}
-
 		/// <summary>Convert a numeric enumerable to another numeric type using INumber<T>.CreateSaturating(TOther)</summary>
 		public static IEnumerable<TOut> ToNum<T, TOut>(this IEnumerable<T> enumerable) where T : INumber<T> where TOut : INumber<TOut>
 		{
-			using IEnumerator<T> e = enumerable.GetEnumerator();
-			while (e.MoveNext())
-				yield return TOut.CreateSaturating(e.Current);
+			foreach (T e in enumerable)
+				yield return TOut.CreateSaturating(e);
 		}
 
 		/// <summary>Convert a numeric enumerable to another numeric type using INumber<T>.CreateTruncating(TOther)</summary>
 		public static IEnumerable<TOut> ToNumTruncating<T, TOut>(this IEnumerable<T> enumerable) where T : INumber<T> where TOut : INumber<TOut>
 		{
-			using IEnumerator<T> e = enumerable.GetEnumerator();
-			while (e.MoveNext())
-				yield return TOut.CreateTruncating(e.Current);
+			foreach (T e in enumerable)
+				yield return TOut.CreateTruncating(e);
 		}
 
 		/// <summary>Convert a numeric enumerable to another numeric type using INumber<T>.CreateChecked(TOther)</summary>
 		/// <exception cref="OverflowException"></exception>
 		public static IEnumerable<TOut> ToNumChecked<T, TOut>(this IEnumerable<T> enumerable) where T : INumber<T> where TOut : INumber<TOut>
 		{
-			using IEnumerator<T> e = enumerable.GetEnumerator();
-			while (e.MoveNext())
-				yield return TOut.CreateChecked(e.Current);
+			foreach (T e in enumerable)
+				yield return TOut.CreateChecked(e);
 		}
 
 		/// <summary>Apply a condition to the elements of an enumerable and transform the element depending on whether it meets that condition or not using functions passed as arguments</summary>
@@ -165,7 +145,7 @@ namespace Eb3yrLib.Extensions
 		}
 
 		/// <summary>Get a circular enumerator from an enumerable, which restarts the enumeration upon reaching the end</summary>
-		/// <remarks>Why did I make this?</remarks>
+		/// <remarks>Why would you want to use this?</remarks>
 		public static CircularEnumerator<T> GetCircularEnumerator<T>(this IEnumerable<T> enumerable)
 		{
 			return new CircularEnumerator<T>(enumerable.GetEnumerator());

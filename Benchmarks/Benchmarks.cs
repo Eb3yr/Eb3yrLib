@@ -4,94 +4,105 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Numerics.Tensors;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+//using Eb3yrLib;
+//using Playground;
+using System.Threading.Tasks;
 
 namespace Benchmarks
 {
 	[MemoryDiagnoser(true)]
-	public class Benchmarks
+	public unsafe class Benchmarks
 	{
-		string str;
-	
-		public char value => str[str.Length - 1];   // Most possible work to reach, excl. duplicates
-	
-		[Params(8, 64, 2048, 16384)]
-		public int Length;
-	
+		private Vector128<float> _vec128;
+		// Attempting to stop overzealous optimisations?
+		public Vector128<float> Vec128
+		{
+			[MethodImpl(MethodImplOptions.NoInlining & MethodImplOptions.NoOptimization)]
+			get => _vec128;
+			set => _vec128 = value;
+		}
+		private Vector256<float> _vec256;
+		public Vector256<float> Vec256
+		{
+			[MethodImpl(MethodImplOptions.NoInlining & MethodImplOptions.NoOptimization)]
+			get => _vec256;
+			set => _vec256 = value;
+		}
+
+		public Vector128<float> DumpVec128;
+		public Vector256<float> DumpVec256;
+
 		[GlobalSetup]
 		public void GlobalSetup()
 		{
-			Span<char> cc = new char[Length];
-			for (ushort i = 0; i < Length; i++)
-				cc[i] = (char)i;
-	
-			// Add some duplicates
-			//Random rng = new(0);
-			//for (int j = 0; j < Length / 32 + rng.Next(2); j++)
-			//	cc[rng.Next(0, Length)] = (char)rng.Next(0, Length);
-	
-			str = new(cc);
-			Debug.Assert(IndexOf() == IndexOfSimd(), "Mismatched results");
-		}
-	
-		[Benchmark(Baseline = true)]
-		public int IndexOf()
-		{
-			return str.IndexOf(value);
-		}
-	
-		[Benchmark]
-		public unsafe int IndexOfSimd()
-		{
-			int i = 0;
-			fixed (char* ptr = str)
-			{
-				if (str.Length > 16)
-				{
-					Vector<ushort> vec;
-					Vector<ushort> values = Vector.Create<ushort>(value);
-					for (; i < str.Length - Vector<ushort>.Count; i += Vector<ushort>.Count)
-					{
-						vec = Unsafe.Read<Vector<ushort>>(ptr + i);
-						if (Vector.EqualsAny(vec, values))
-						{
-							int max = i + Vector<ushort>.Count;
-							while (i < max)
-							{
-								if (ptr[i++] == value ||
-									ptr[i++] == value ||
-									ptr[i++] == value ||
-									ptr[i++] == value)
-									return i - 1;
-							}
-						}
-					}
-				}
+			Random rng = new(0);
+			Vec128 = Vector128.Create<float>([rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle()]);
+			Vec256 = Vector256.Create<float>([rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle()]);
 
-				int remaining = str.Length - i;
-				while (remaining > 0)
-				{
-					switch (remaining & 3)
-					{
-						case 0:
-							if (ptr[i++] == value) return i - 1;
-							goto case 3;
-						case 3:
-							if (ptr[i++] == value) return i - 1;
-							goto case 2;
-						case 2:
-							if (ptr[i++] == value) return i - 1;
-							goto case 1;
-						case 1:
-							if (ptr[i++] == value) return i - 1;
-							break;
-					}
-					remaining -= 4;
-				}
-			}
-			return -1;
+			
+			Console.WriteLine("SSE: " + Sse.IsSupported);
+			Console.WriteLine("SSE2: " + Sse2.IsSupported);
+			Console.WriteLine("SSE3: " + Sse3.IsSupported);
+			Console.WriteLine("AVX: " + Avx.IsSupported);
+			Console.WriteLine("AVX2: " + Avx2.IsSupported);
+			Console.WriteLine("Vec128: " + Vector128.IsHardwareAccelerated + "," + Vector128<float>.IsSupported);
+			Console.WriteLine("Vec256: " + Vector256.IsHardwareAccelerated + "," + Vector256<float>.IsSupported);
+		}
+
+		// All using 128 floats
+
+		[Benchmark(Baseline = true)]
+		public void SseReciprocal128()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec128 =
+			Sse.Reciprocal(Vec128);
+		}
+
+		[Benchmark]
+		public void Sse2Reciprocal128()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec128 =
+			Sse2.Reciprocal(Vec128);
+		}
+
+		[Benchmark]
+		public void Sse3Reciprocal128()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec128 =
+			Sse3.Reciprocal(Vec128);
+		}
+
+		[Benchmark]
+		public void AvxReciprocal256()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec256 =
+			Avx.Reciprocal(Vec256);
+		}
+
+		[Benchmark]
+		public void Avx2Reciprocal256()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec256 =
+			Avx2.Reciprocal(Vec256);
+		}
+
+		[Benchmark]
+		public void Vector128OneOverVec()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec128 =
+			Vector128<float>.One / Vec128;
+		}
+
+		[Benchmark]
+		public void Vector256OneOverVec()
+		{
+			for (int i = 0; i < 1000; i++) DumpVec256 =
+			Vector256<float>.One / Vec256;
 		}
 	}
 }

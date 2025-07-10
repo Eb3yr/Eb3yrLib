@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Numerics.Tensors;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,7 +17,7 @@ namespace Eb3yrLib.Mathematics
 		/// <param name="interval">Sum interval. One by default</param>
 		/// <param name="sumFunction">Function inside the sum. n by default</param>
 		/// <returns>The sum of sumFunction's results for each interval between start and stop</returns>
-		public static T Sum<T>(int start, int stop, int interval = 1, Func<int, T>? sumFunction = null) where T : INumber<T>
+		public static T SumFunc<T>(int start, int stop, int interval = 1, Func<int, T>? sumFunction = null) where T : INumber<T>
 		{
 			Func<int, T> sumFunc = sumFunction is null ? (int x) => (T)Convert.ChangeType(x, typeof(T), System.Globalization.CultureInfo.InvariantCulture) : sumFunction;
 			T d = T.Zero;
@@ -24,6 +25,20 @@ namespace Eb3yrLib.Mathematics
 				d += sumFunc(i);
 
 			return d;
+		}
+
+		public static T Sum<T>(ReadOnlySpan<T> span) where T : INumberBase<T>
+		{
+			if (span.Length < 16)
+			{
+				T sum = T.Zero;
+				foreach (T t in span)
+					sum += t;
+
+				return sum;
+			}
+
+			return TensorPrimitives.Sum(span);
 		}
 
 		/// <summary>Gets f(x) at the given x position using linear interpolation for two inputted enumerables xx and fx of equal lengths. Does not accept unsorted inputs.</summary>
@@ -70,7 +85,13 @@ namespace Eb3yrLib.Mathematics
 		public static T Lerp<T>(T x, IEnumerable<T> xx, IEnumerable<T> fx) where T : INumber<T>
 		{
 			if (!xx.IsOrdered())
-				(xx, fx) = xx.Sort(fx);
+			{
+				var _xx = xx.ToArray();
+				var _fx = fx.ToArray();	
+				Array.Sort(_xx, _fx);
+				xx = _xx;
+				fx = _fx;
+			}
 
 			return LerpSorted(x, xx, fx);
 		}

@@ -1,10 +1,15 @@
 ﻿using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Eb3yrLib.Collections
 {
 	/// <summary>A 2D fixed-length array implementation using a 1D backing array</summary>
-	/// <remarks> y dimension elements for a given x index are contiguous in the backing array. Accessing all y elements for a given x index performs like a jagged or 1D array, but accessing all of x for a given y performs moderately worse than a multidimensional array. Ideally enumerate manually, while it implements IEnumerable<T>, avoid LINQ where unecessary</remarks>
+	/// <remarks> Array2D is row-major, therefore for loops should index using a y-outer x-inner pattern.</remarks>
+	/// 
+
+	// Make sure the indexing matches that of Span2D<T> from CommunityToolkit.HighPerformance (NuGet). That can be initialised from a 1D array (the backing array here), a width, and a height. It's just a sanity check
+
 	public readonly struct Array2D<T> : IList<T>
 	{
 		/// <param name="lengthX">Length of the first dimension</param>
@@ -32,9 +37,9 @@ namespace Eb3yrLib.Collections
 		/// <param name="defaultValue">Default value to populate the array with</param>
 		public Array2D(int length, T defaultValue) : this(length, length, defaultValue) { }
 
+		private readonly T[] values;
 		private readonly int xBound;
 		private readonly int yBound;
-		private readonly T[] values;
 
 		public int Count => values.Length;
 
@@ -60,34 +65,34 @@ namespace Eb3yrLib.Collections
 			{
 				0 => xBound + 1,
 				1 => yBound + 1,
-				_ => throw new ArgumentOutOfRangeException(message: "dimension must be zero or one.", null)
+				_ =>  ArrayThrowHelpers.ThrowArgumentOutOfRange(message: "dimension must be zero or one.", null)
 			};
 		}
 
 		/// <summary>Gets the index by multiplying x by xBound and adding y. Means that y elements for a given x are contiguous, quicker in a nested for loop where the outer loop is x. Slightly slower than a multidimensional array otherwise. </summary>
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
-		private int GetIndex(int x, int y) => xBound * x + y;   // multiply by x instead of y so that all y vals are adjacent for ideal performance in nested for loops with y on the inside
+		public int GetIndex(int x, int y) => yBound * y + x;
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public (int x, int y) FromIndex(int index)
+		{
+			int y = index % yBound;
+			return (index - y * yBound, y);
+		}
 
 		public IEnumerator<T> GetEnumerator() => values.AsEnumerable().GetEnumerator();
 
 		IEnumerator IEnumerable.GetEnumerator() => values.GetEnumerator();
 
+		public (int x, int y) IndexOf2D(T item) => FromIndex(Array.IndexOf(values, item));
+
 		public int IndexOf(T item) => Array.IndexOf(values, item);
 
-		public void Insert(int index, T item)
-		{
-			throw new NotSupportedException("Inserting items not supported on a fixed-length Array2D");
-		}
+		public void Insert(int index, T item) => ArrayThrowHelpers.ThrowNotSupported("Inserting items not supported on a fixed-length Array2D");
 
-		public void RemoveAt(int index)
-		{
-			throw new NotSupportedException("Removing items not supported on a fixed-length Array2D");
-		}
+		public void RemoveAt(int index) => ArrayThrowHelpers.ThrowNotSupported("Removing items not supported on a fixed-length Array2D");
 
-		public void Add(T item)
-		{
-			throw new NotSupportedException("Adding items not supported on a fixed-length Array2D");
-		}
+		public void Add(T item) => ArrayThrowHelpers.ThrowNotSupported("Adding items not supported on a fixed-length Array2D");
 
 		public void Clear() => Array.Clear(values);
 
@@ -95,9 +100,23 @@ namespace Eb3yrLib.Collections
 
 		public void CopyTo(T[] array, int arrayIndex) => values.CopyTo(array, arrayIndex);
 
-		public bool Remove(T item)
+		public bool Remove(T item) => (bool)ArrayThrowHelpers.ThrowNotSupported("Removing items not supported on a fixed-length Array2D");
+
+		public Span<T> AsSpan() => values.AsSpan();
+	}
+
+	file static class ArrayThrowHelpers
+	{
+		[DoesNotReturn]
+		internal static int ThrowArgumentOutOfRange(string? message = null, Exception? innerException = null)
 		{
-			throw new NotSupportedException("Removing items not supported on a fixed-length Array2D");
+			throw new ArgumentOutOfRangeException(message, innerException);
+		}
+
+		[DoesNotReturn]
+		internal static object ThrowNotSupported(string? message = null, Exception? innerException = null)
+		{
+			throw new NotSupportedException(message, innerException);
 		}
 	}
 }

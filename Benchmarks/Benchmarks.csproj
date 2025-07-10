@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <EnablePreviewFeatures>True</EnablePreviewFeatures>
   </PropertyGroup>
   <PropertyGroup>
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -11,9 +12,17 @@
     <Optimize>true</Optimize>
     <Configuration>Release</Configuration>
     <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.14.0" />
+    <PackageReference Include="System.Numerics.Tensors" Version="9.0.2" />
+  </ItemGroup>
+  <ItemGroup>
+    <!--  // Doing this because the other two projects are on dotnet 10 preview
+    <ProjectReference Include="..\Eb3yrLib\Eb3yrLib.csproj" />
+    <ProjectReference Include="..\Playground\Playground.csproj" />
+    -->
   </ItemGroup>
 </Project>

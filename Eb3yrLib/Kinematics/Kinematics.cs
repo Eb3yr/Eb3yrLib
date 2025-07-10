@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
+using System.Numerics.Tensors;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -55,67 +57,22 @@ namespace Eb3yrLib.Kinematics
 			return joints;
 		}
 
-		/// <summary>
-		/// Use the FABRIK (forward and backward reaching inverse kinematics) method to solve the inverse kinematics problem
-		/// </summary>
-		/// <param name="joints">IList of joint positions in 3D space, including the end effector</param>
-		/// <param name="target">Target position</param>
-		/// <param name="tolerance">Acceptable tolerance to end iterations and return</param>
-		public static IList<Vector3> Fabrik(IList<Vector3> joints, Vector3 target, float tolerance = 0.1f)
-		{
-			float distRootToTarget = Vector3.Distance(joints[0], target);
-			float[] di = new float[joints.Count - 1];  // Distance from index joint to next. Used to keep constant lengths between joints
-			for (int i = 0; i < joints.Count - 1; i++)
-				di[i] = Vector3.Distance(joints[i + 1], joints[i]);
-
-			if (distRootToTarget > di.Sum())    // if unreachable
-			{
-				for (int i = 0; i < joints.Count - 1; i++)
-				{
-					float r = Vector3.Distance(joints[i], target);
-					float lambda = di[i] / r;   // Cannot overlap target, no risk of divide by zero
-					joints[i + 1] = (1f - lambda) * joints[i] + lambda * target;
-				}
-			}
-			else
-			{
-				Vector3 b = joints[0];
-				float dif_A;
-				do
-				{
-					dif_A = Vector3.DistanceSquared(joints[joints.Count - 1], target);  // Micro-optimisation to avoid sqrt every iteration. Reflected in while condition
-																						// Forwards-reaching:
-					joints[joints.Count - 1] = target;
-					for (int i = joints.Count - 2; i > -1; i--)
-					{
-						float r = Vector3.Distance(joints[i + 1], joints[i]);
-						if (r == 0) continue;
-						float lambda = di[i] / r;
-						joints[i] = (1f - lambda) * joints[i + 1] + lambda * joints[i];
-					}
-					// Backwards-reaching:
-					joints[0] = b;
-					for (int i = 0; i < joints.Count - 1; i++)
-					{
-						float r = Vector3.Distance(joints[i + 1], joints[i]);
-						if (r == 0) continue;
-						float lambda = di[i] / r;
-						joints[i + 1] = (1f - lambda) * joints[i] + lambda * joints[i + 1];
-					}
-				} while (dif_A > tolerance * tolerance);
-			}
-			return joints;
-		}
-
 		/// <summary>Use the FABRIK method to solve the inverse kinematics problem</summary>
 		/// <param name="joints">Joint positions in 2D space, including the end effector</param>
 		/// <param name="target">Target position</param>
 		/// <param name="tolerance">Acceptable tolerance to end iterations and return</param>
-		public static void Fabrik2D(in IList<Vector2> joints, Vector2 target, float tolerance = 0.1f)
+		public static unsafe void Fabrik2D(Span<Vector2> joints, Vector2 target, float tolerance = 0.1f)
 		{
-			float[] di = new float[joints.Count - 1];  // Distance from index joint to next
-			for (int i = 0; i < joints.Count - 1; i++)
-				di[i] = Vector2.Distance(joints[i + 1], joints[i]);
+			throw new NotImplementedException("Go fix the shitty loop here. Vectorise it, and make it not unsafe shit. Span enumerator might turn out to be far faster than a for loop too.");
+			// Distance from index joint to next
+			Span<float> di = joints.Length < 128 ? stackalloc float[joints.Length - 1] : new float[joints.Length - 1];  // Minimise heap allocations for smaller chains
+			// Avoid bounds checks
+			fixed (float* ptr = di)
+			fixed (Vector2* jptr = joints)
+			{
+				for (int i = 0; i < joints.Length - 1; i++)
+					ptr[i] = Vector2.Distance(jptr[i + 1], jptr[i]);
+			}
 
 			Fabrik2D(joints, di, target, tolerance);
 		}
@@ -125,13 +82,13 @@ namespace Eb3yrLib.Kinematics
 		/// <param name="lengths">Length of each joint. The final joint should have a length of 0 or not exist</param>
 		/// <param name="target">Target position</param>
 		/// <param name="tolerance">Acceptable tolerance to end iterations and return</param>
-		public static void Fabrik2D(in IList<Vector2> joints, IList<float> lengths, Vector2 target, float tolerance = 0.1f)
+		public static unsafe void Fabrik2D(Span<Vector2> joints, ReadOnlySpan<float> lengths, Vector2 target, float tolerance = 0.1f)
 		{
 			float dist = Vector2.Distance(joints[0], target);
 
-			if (dist > lengths.Sum())    // if unreachable
+			if (dist > Mathematics.Maths.Sum(lengths))    // if unreachable
 			{
-				for (int i = 0; i < joints.Count - 1; i++)
+				for (int i = 0; i < joints.Length - 1; i++)
 				{
 					float r = Vector2.Distance(joints[i], target);
 					float lambda = lengths[i] / r;   // Cannot overlap target, no risk of divide by zero
@@ -142,12 +99,13 @@ namespace Eb3yrLib.Kinematics
 			{
 				Vector2 b = joints[0];
 				float dif_A;
+				float toleranceSquared = tolerance * tolerance;
 				do
 				{
-					dif_A = Vector2.DistanceSquared(joints[joints.Count - 1], target);
+					dif_A = Vector2.DistanceSquared(joints[joints.Length - 1], target);
 					// Forwards-reaching:
-					joints[joints.Count - 1] = target;
-					for (int i = joints.Count - 2; i > -1; i--)
+					joints[joints.Length - 1] = target;
+					for (int i = joints.Length - 2; i > -1; i--)
 					{
 						float r = Vector2.Distance(joints[i + 1], joints[i]);
 						if (r == 0) continue;
@@ -156,14 +114,14 @@ namespace Eb3yrLib.Kinematics
 					}
 					// Backwards-reaching:
 					joints[0] = b;
-					for (int i = 0; i < joints.Count - 1; i++)
+					for (int i = 0; i < joints.Length - 1; i++)
 					{
 						float r = Vector2.Distance(joints[i + 1], joints[i]);
 						if (r == 0) continue;
 						float lambda = lengths[i] / r;
 						joints[i + 1] = (1f - lambda) * joints[i] + lambda * joints[i + 1];
 					}
-				} while (dif_A > tolerance * tolerance);
+				} while (dif_A > toleranceSquared);	// Avoid sqrt(dif_A)
 			}
 		}
 
@@ -174,6 +132,57 @@ namespace Eb3yrLib.Kinematics
 		public static void Fabrik2D(Chain chain, Vector2 target, float tolerance = 0.1f)
 		{
 			Fabrik2D(chain.Joints, chain.Lengths, target, tolerance);
+		}
+	}
+
+	file static unsafe class KinematicsHelpers
+	{
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		internal static void ArgumentThrowHelper(string? msg)
+		{
+			throw new ArgumentException(msg);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal static float ManhattanDistance(Vector2 left, Vector2 right)
+		{
+			left = Vector2.Abs(right - left);
+			return left.X + left.Y;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]  // Inlining is the only thing that permits this, due to the use of stackalloc. If it doesn't inline, things break. Pls inline (:
+		internal static Span<float> Distances(Span<Vector2> joints)
+		{
+			throw new NotImplementedException("This is done idiotically and desperately needs a rewrite!");
+			// Why are we returning a span that could be stackalloced? If it's stackalloced it WILL throw. Stupid!
+			Span<float> di = joints.Length < 128 ? stackalloc float[joints.Length - 1] : new float[joints.Length - 1];  // Minimise heap allocations for smaller chains
+																														// Avoid bounds checks
+			fixed (float* ptr = di)
+			fixed (Vector2* jptr = joints)
+			{
+				for (int i = 0; i < joints.Length - 1; i++)
+					ptr[i] = Vector2.Distance(jptr[i + 1], jptr[i]);
+			}
+#pragma warning disable CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
+			return di;
+#pragma warning restore CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		internal static Span<float> ManhattanDistances(Span<Vector2> joints)
+		{
+			Span<float> di = joints.Length < 128 ? stackalloc float[joints.Length - 1] : new float[joints.Length - 1];  // Minimise heap allocations for smaller chains
+			// Avoid bounds checks
+			
+			fixed (float* ptr = di)
+			fixed (Vector2* jptr = joints)
+			{
+				for (int i = 0; i < joints.Length - 1; i++)
+					ptr[i] = ManhattanDistance(jptr[i + 1], jptr[i]);
+			}
+#pragma warning disable CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
+			return di;
+#pragma warning restore CS9080 // Use of variable in this context may expose referenced variables outside of their declaration scope
 		}
 	}
 }

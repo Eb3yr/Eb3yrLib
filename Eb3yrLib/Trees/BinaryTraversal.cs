@@ -16,16 +16,12 @@ namespace Eb3yrLib.Trees
 
 			while (q.Count > 0)
 			{
-				int size = q.Count;
-				for (int i = 0; i < size; i++)	// Deplete the queue of the layer of nodes previously added, to populate it with the layer below
-				{
-					IBinaryNode<TSelf, TValue> popped = q.Dequeue();
-					yield return popped;
-					if (popped.Left is not null)
-						q.Enqueue(popped.Left);
-					if (popped.Right is not null)
-						q.Enqueue(popped.Right);
-				}
+				IBinaryNode<TSelf, TValue> popped = q.Dequeue();
+				yield return popped;
+				if (popped.Left is not null)
+					q.Enqueue(popped.Left);
+				if (popped.Right is not null)
+					q.Enqueue(popped.Right);
 			}
 		}
 
@@ -37,7 +33,7 @@ namespace Eb3yrLib.Trees
 			while (q.Count > 0)
 			{
 				IBinaryNode<TSelf, TValue>[] nodes = new IBinaryNode<TSelf, TValue>[q.Count];
-				for (int i = 0; i < nodes.Length; i++)
+				for (int i = 0; i < nodes.Length; i++)	// q.Count will change for each iteration as enqueue and dequeue get called. Store the initial value as a local or use nodes.Length 
 				{
 					IBinaryNode<TSelf, TValue> popped = q.Dequeue();
 					nodes[i] = popped;
