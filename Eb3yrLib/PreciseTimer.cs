@@ -28,6 +28,7 @@ namespace Eb3yrLib
 			while (stopwatch.ElapsedMicroseconds < udelay)
 				;
 
+			stopwatch.Stop();
 			return true;
 		}
 
@@ -69,16 +70,7 @@ namespace Eb3yrLib
 			};
 		}
 
-		public static void PrintTimerResolution()
-		{
-			// In 100s of ns
-			NativeMethods.NtQueryTimerResolution(out uint min, out uint max, out uint current);
-
-			Console.WriteLine($"Min resolution: {min / 10_000f}ms\nMax resolution: {max / 10_000f}ms\nCurrent resolution: {current / 10_000f}ms");
-
-		}
-
-		public static uint GetCurrentTimerResolution()
+		internal static uint GetCurrentTimerResolution()
 		{
 			NativeMethods.NtQueryTimerResolution(out _, out _, out uint current);
 			return current;
