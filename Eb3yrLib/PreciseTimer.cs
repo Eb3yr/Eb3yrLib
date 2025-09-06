@@ -26,7 +26,7 @@ namespace Eb3yrLib
 					return false;
 
 			while (stopwatch.ElapsedMicroseconds < udelay)
-				;
+				Thread.SpinWait(2);
 
 			stopwatch.Stop();
 			return true;
@@ -66,7 +66,7 @@ namespace Eb3yrLib
 				0x00000102 => false,   // time-out interval elapsed without the object signalling
 				0x00000080 => false,   // WAIT_ABANDONED	(should be unreachable)
 				0xFFFFFFFF => false,    // function failed
-				_ => throw new UnreachableException("How did we get here?")
+				_ => false
 			};
 		}
 
