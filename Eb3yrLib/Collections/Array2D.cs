@@ -10,7 +10,7 @@ namespace Eb3yrLib.Collections
 
 	// Make sure the indexing matches that of Span2D<T> from CommunityToolkit.HighPerformance (NuGet). That can be initialised from a 1D array (the backing array here), a width, and a height. It's just a sanity check
 
-	public readonly struct Array2D<T> : IList<T>
+	public sealed class Array2D<T> : IList<T>
 	{
 		/// <param name="lengthX">Length of the first dimension</param>
 		/// <param name="lengthY">Length of the second dimension</param>
@@ -65,7 +65,7 @@ namespace Eb3yrLib.Collections
 			{
 				0 => xBound + 1,
 				1 => yBound + 1,
-				_ =>  ArrayThrowHelpers.ThrowArgumentOutOfRange(message: "dimension must be zero or one.", null)
+				_ =>  ThrowHelpers.ThrowArgumentOutOfRange(message: "dimension must be zero or one.", null)
 			};
 		}
 
@@ -88,11 +88,11 @@ namespace Eb3yrLib.Collections
 
 		public int IndexOf(T item) => Array.IndexOf(values, item);
 
-		public void Insert(int index, T item) => ArrayThrowHelpers.ThrowNotSupported("Inserting items not supported on a fixed-length Array2D");
+		public void Insert(int index, T item) => ThrowHelpers.ThrowNotSupported("Inserting items not supported on a fixed-length Array2D");
 
-		public void RemoveAt(int index) => ArrayThrowHelpers.ThrowNotSupported("Removing items not supported on a fixed-length Array2D");
+		public void RemoveAt(int index) => ThrowHelpers.ThrowNotSupported("Removing items not supported on a fixed-length Array2D");
 
-		public void Add(T item) => ArrayThrowHelpers.ThrowNotSupported("Adding items not supported on a fixed-length Array2D");
+		public void Add(T item) => ThrowHelpers.ThrowNotSupported("Adding items not supported on a fixed-length Array2D");
 
 		public void Clear() => Array.Clear(values);
 
@@ -100,23 +100,8 @@ namespace Eb3yrLib.Collections
 
 		public void CopyTo(T[] array, int arrayIndex) => values.CopyTo(array, arrayIndex);
 
-		public bool Remove(T item) => (bool)ArrayThrowHelpers.ThrowNotSupported("Removing items not supported on a fixed-length Array2D");
+		public bool Remove(T item) { ThrowHelpers.ThrowNotSupported("Removing items not supported on a fixed-length Array2D"); return false; }
 
 		public Span<T> AsSpan() => values.AsSpan();
-	}
-
-	file static class ArrayThrowHelpers
-	{
-		[DoesNotReturn]
-		internal static int ThrowArgumentOutOfRange(string? message = null, Exception? innerException = null)
-		{
-			throw new ArgumentOutOfRangeException(message, innerException);
-		}
-
-		[DoesNotReturn]
-		internal static object ThrowNotSupported(string? message = null, Exception? innerException = null)
-		{
-			throw new NotSupportedException(message, innerException);
-		}
 	}
 }

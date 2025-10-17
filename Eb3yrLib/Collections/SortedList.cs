@@ -5,7 +5,7 @@ namespace Eb3yrLib.Collections
 {
 	/// <summary>Encapsulates a <see cref="List{T}"/> that is sorted on the provided <see cref="Comparer{T}"/>, or the default comparer if none is provided.</summary>
 	/// <typeparam name="T"></typeparam>
-	public class SortedList<T> : IList<T>
+	public sealed class SortedList<T> : IList<T>
 	{
 		private readonly List<T> _list;
 

@@ -26,7 +26,7 @@ namespace Eb3yrLib
 					return false;
 
 			while (stopwatch.ElapsedMicroseconds < udelay)
-				Thread.SpinWait(2);
+				Thread.SpinWait(4);
 
 			stopwatch.Stop();
 			return true;

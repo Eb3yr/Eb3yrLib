@@ -22,7 +22,7 @@ namespace Eb3yrLib.Aerodynamics
 		{
 			double Uinf = u.Max();
 			var uOverUinf = u.Select(i => i / Uinf).ToArray();
-			double delta = Maths.LerpSorted(0.99, uOverUinf, y);
+			double delta = Maths.Lerp(0.99, uOverUinf, y);
 			double tau_w = 1000 * mu * (u[1] - u[0]) / (y[1] - y[0]);
 			double Cf = tau_w / (0.5 * rho * Uinf * Uinf);
 

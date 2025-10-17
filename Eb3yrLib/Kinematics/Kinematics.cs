@@ -86,7 +86,7 @@ namespace Eb3yrLib.Kinematics
 		{
 			float dist = Vector2.Distance(joints[0], target);
 
-			if (dist > Mathematics.Maths.Sum(lengths))    // if unreachable
+			if (dist > TensorPrimitives.Sum(lengths))    // if unreachable
 			{
 				for (int i = 0; i < joints.Length - 1; i++)
 				{
