@@ -22,7 +22,8 @@ namespace Eb3yrLib.Mathematics
             Debug.Assert(xx.IsOrdered(isAscending));
             Debug.Assert(fx.IsOrdered(isAscending));
 
-            int idx = xx.BinarySearch(x);
+            int idx = isAscending ? xx.BinarySearch(x)
+                                  : xx.BinarySearch(x, Comparer<T>.Create((x, y) => -x.CompareTo(y)));
 			if (idx < 0)
 				idx = ~idx;
 			else return fx[idx];
@@ -43,8 +44,14 @@ namespace Eb3yrLib.Mathematics
 			}
 		}
 
-		/// <summary>Maps a linear interpolation of value between fromA and fromB onto toA and toB.</summary>
-		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// <summary>Maps a linear interpolation of value between fromA and fromB onto toA and toB.</summary>
+        /// <param name="fromA">Lower bound of the first range.</param>
+        /// <param name="fromB">Upper bound of the first range.</param>
+        /// <param name="toA">Lower bound of the range to be re-mapped upon.</param>
+        /// <param name="toB">Upper bound of the range to be re-mapped upon.</param>
+        /// <param name="value">A number between fromA and fromB to re-map between toA and toB.</param>
+        /// <returns>value re-mapped from the interval [fromA, fromB] to the interval [toA, toB].</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static T LerpMap<T>(T fromA, T fromB,  T toA, T toB, T value) where T : IFloatingPointIeee754<T>
 		{
 			Debug.Assert(fromA < fromB);
@@ -52,10 +59,11 @@ namespace Eb3yrLib.Mathematics
 			return T.Lerp(toA, toB, InverseLerp(fromA, fromB, value));
 		}
 
-        /// <summary>Get the number which represents where value falls between a and b, as if value was returned from IFloatingPointIeee754`1.Lerp(a, b, number).</summary>
-		/// <param name="a">The lesser number.</param>
-		/// <param name="b">The greater number.</param>
-		/// <param name="value">A number between a and b.</param>
+        /// <summary>Gets the weight which represents where value falls in the interval [a, b].</summary>
+		/// <param name="a">Lower bound of the range.</param>
+		/// <param name="b">Upper bound of the range.</param>
+		/// <param name="value">A number between within the range [a, b].</param>
+        /// <returns>The weighting for which Lerp(a, b, weight) == value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T InverseLerp<T>(T a, T b, T value) where T : IFloatingPointIeee754<T>
 		{
