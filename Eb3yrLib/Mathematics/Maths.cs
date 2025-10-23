@@ -20,7 +20,6 @@ namespace Eb3yrLib.Mathematics
 
             bool isAscending = xx[1] > xx[0];
             Debug.Assert(xx.IsOrdered(isAscending));
-            Debug.Assert(fx.IsOrdered(isAscending));
 
             int idx = isAscending ? xx.BinarySearch(x)
                                   : xx.BinarySearch(x, Comparer<T>.Create((x, y) => -x.CompareTo(y)));
