@@ -1,108 +1,107 @@
 ﻿using BenchmarkDotNet.Attributes;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Numerics;
 using System.Numerics.Tensors;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-//using Eb3yrLib;
-//using Playground;
-using System.Threading.Tasks;
 
 namespace Benchmarks
 {
 	[MemoryDiagnoser(true)]
-	public unsafe class Benchmarks
+	public class Benchmarks
 	{
-		private Vector128<float> _vec128;
-		// Attempting to stop overzealous optimisations?
-		public Vector128<float> Vec128
-		{
-			[MethodImpl(MethodImplOptions.NoInlining & MethodImplOptions.NoOptimization)]
-			get => _vec128;
-			set => _vec128 = value;
-		}
-		private Vector256<float> _vec256;
-		public Vector256<float> Vec256
-		{
-			[MethodImpl(MethodImplOptions.NoInlining & MethodImplOptions.NoOptimization)]
-			get => _vec256;
-			set => _vec256 = value;
-		}
+		// See https://discord.com/channels/143867839282020352/143867839282020352/1449272708947902638 for motivation
 
-		public Vector128<float> DumpVec128;
-		public Vector256<float> DumpVec256;
+		long[] _arr = null!;
+		long[][] _arr2 = null!;
+
+		public long[] _arrToAssign = null!;
+		public long[][] _arr2ToAssign = null!;
+
+        [Params(1_000_000_000 / 8)]
+        public int length;
 
 		[GlobalSetup]
 		public void GlobalSetup()
 		{
 			Random rng = new(0);
-			Vec128 = Vector128.Create<float>([rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle()]);
-			Vec256 = Vector256.Create<float>([rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle(), rng.NextSingle()]);
+			_arr = new long[length];
+			for (int i = 0; i < length; i++)
+				_arr[i] = rng.Next(-10_000_000, 10_000_000);
 
-			
-			Console.WriteLine("SSE: " + Sse.IsSupported);
-			Console.WriteLine("SSE2: " + Sse2.IsSupported);
-			Console.WriteLine("SSE3: " + Sse3.IsSupported);
-			Console.WriteLine("AVX: " + Avx.IsSupported);
-			Console.WriteLine("AVX2: " + Avx2.IsSupported);
-			Console.WriteLine("Vec128: " + Vector128.IsHardwareAccelerated + "," + Vector128<float>.IsSupported);
-			Console.WriteLine("Vec256: " + Vector256.IsHardwareAccelerated + "," + Vector256<float>.IsSupported);
+			int chunkSize = 48_000 / 8;	// 48kb per arr
+			int count = length / chunkSize;
+			int rem = length - count * chunkSize;
+
+			_arr2 = new long[rem != 0 ? count + 1 : count][];
+
+			for (int i = 0; i < count; i++)
+				_arr2[i] = new long[chunkSize];
+
+			if (rem != 0)
+				_arr2[^1] = new long[rem];
+
+			rng = new(0);
+			foreach (long[] arr in _arr2)
+			{
+				for (int i = 0; i < arr.Length; i++)
+					arr[i] = rng.Next(-10_000_000, 10_000_000);
+			}
+
+			long s1 = UnbatchedSumTensorPrims();
+			long s2 = BatchedSumTensorPrims();
+
+			int sumLengths = 0;
+			foreach (long[] arr in _arr2)
+				sumLengths += arr.Length;
+
+			if (sumLengths != _arr.Length)
+				throw new Exception($"Array length mismatch!\n\n_arr length: {_arr.Length}\nsumLengths: {sumLengths}");
+
+			if (s1 != s2)
+				throw new Exception($"Count mismatch!\n\ns1: {s1}\ns2: {s2}");
 		}
-
-		// All using 128 floats
 
 		[Benchmark(Baseline = true)]
-		public void SseReciprocal128()
+		public long UnbatchedSumTensorPrims()
 		{
-			for (int i = 0; i < 1000; i++) DumpVec128 =
-			Sse.Reciprocal(Vec128);
+			return TensorPrimitives.Sum(_arr);
 		}
 
 		[Benchmark]
-		public void Sse2Reciprocal128()
+		public long BatchedSumTensorPrims()
 		{
-			for (int i = 0; i < 1000; i++) DumpVec128 =
-			Sse2.Reciprocal(Vec128);
+			long count = 0;
+			foreach (long[] arr in _arr2)
+				count += TensorPrimitives.Sum(arr);
+
+			return count;
 		}
 
 		[Benchmark]
-		public void Sse3Reciprocal128()
+		public long UnbatchedSumAllocateInBenchTensorPrims()
 		{
-			for (int i = 0; i < 1000; i++) DumpVec128 =
-			Sse3.Reciprocal(Vec128);
+			_arrToAssign = new long[length];
+			return TensorPrimitives.Sum(_arr);
 		}
 
 		[Benchmark]
-		public void AvxReciprocal256()
+		public long BatchedSumAllocateInBenchTensorPrims()
 		{
-			for (int i = 0; i < 1000; i++) DumpVec256 =
-			Avx.Reciprocal(Vec256);
-		}
+			int chunkSize = 48_000 / 8; // 48kb per arr
+			int lenCount = length / chunkSize;
+			int rem = length - lenCount * chunkSize;
 
-		[Benchmark]
-		public void Avx2Reciprocal256()
-		{
-			for (int i = 0; i < 1000; i++) DumpVec256 =
-			Avx2.Reciprocal(Vec256);
-		}
+			_arr2ToAssign = new long[rem != 0 ? lenCount + 1 : lenCount][];
 
-		[Benchmark]
-		public void Vector128OneOverVec()
-		{
-			for (int i = 0; i < 1000; i++) DumpVec128 =
-			Vector128<float>.One / Vec128;
-		}
+			for (int i = 0; i < lenCount; i++)
+				_arr2ToAssign[i] = new long[chunkSize];
 
-		[Benchmark]
-		public void Vector256OneOverVec()
-		{
-			for (int i = 0; i < 1000; i++) DumpVec256 =
-			Vector256<float>.One / Vec256;
+			if (rem != 0)
+				_arr2ToAssign[^1] = new long[rem];
+
+			long count = 0;
+			foreach (long[] arr in _arr2)
+				count += TensorPrimitives.Sum(arr);
+			
+			return count;
 		}
 	}
 }
