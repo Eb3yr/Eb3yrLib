@@ -8,10 +8,10 @@ namespace Playground
 {
     public static partial class FindSetOfInts
     {
-		public static async ValueTask FindAsync(string path1, string path2, string pathWriteTo, int batchSize = int.MaxValue)
+		public static async ValueTask FindAsync(string path1, string path2, string pathWriteTo, int batchSize = int.MaxValue, bool useAsync = true)
 		{
 			const int byteBufferLength = 4096;
-			const bool useAsync = true; // Setting this to true drops throughput by 75%!
+			//const bool useAsync = false; // Setting this to true drops throughput by 75%!
 			using FileStream fs1 = new(path1, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, byteBufferLength, useAsync);
 			BitArrays arr = new(4_294_967_296L, batchSize);
 
@@ -83,5 +83,20 @@ namespace Playground
 			sw.Stop();
 			Console.WriteLine($"FindAsync for batchSize = {64_000} ran in {sw.ElapsedMilliseconds / 1000}s");
 		}
+
+		public static async ValueTask RunAsyncFalse()
+		{
+			GC.Collect();
+			var sw = Stopwatch.StartNew();
+			await FindAsync(Path1, Path2, PathOut, int.MaxValue, false);
+			sw.Stop();
+			Console.WriteLine($"FindAsync(useAsync = false) for batchSize = {int.MaxValue} ran in {sw.ElapsedMilliseconds / 1000}s");
+			GC.Collect();
+			sw.Restart();
+			await FindAsync(Path1, Path2, PathOut, 64_000, false);
+			sw.Stop();
+			Console.WriteLine($"FindAsync(useAsync = false) for batchSize = {64_000} ran in {sw.ElapsedMilliseconds / 1000}s");
+		}
+	}
 	}
 }
