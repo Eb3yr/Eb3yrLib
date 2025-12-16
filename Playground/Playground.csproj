@@ -10,8 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="ScottPlot" Version="5.0.44" />
     <PackageReference Include="System.IO.Ports" Version="9.0.2" />
     <PackageReference Include="System.Numerics.Tensors" Version="9.0.2" />
   </ItemGroup>
