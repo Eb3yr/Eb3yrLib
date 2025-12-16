@@ -14,4 +14,10 @@
     <PackageReference Include="System.Numerics.Tensors" Version="9.0.2" />
   </ItemGroup>
 
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugSymbols>False</DebugSymbols>
+		<DebugType>None</DebugType>
+	</PropertyGroup>
+
+
 </Project>
