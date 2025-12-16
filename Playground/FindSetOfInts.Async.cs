@@ -98,5 +98,4 @@ namespace Playground
 			Console.WriteLine($"FindAsync(useAsync = false) for batchSize = {64_000} ran in {sw.ElapsedMilliseconds / 1000}s");
 		}
 	}
-	}
 }
