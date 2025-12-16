@@ -11,9 +11,6 @@ namespace Eb3yrLib
 		public static void ThrowArgumentException(string? msg = null, string? paramName = null) => throw new ArgumentException(msg, paramName);
 
 		[DoesNotReturn]
-		public static void ThrowNotSupportedException(string? msg = null) => throw new NotSupportedException(msg);
-
-		[DoesNotReturn]
 		internal static int ThrowArgumentOutOfRange(string? message = null, Exception? innerException = null) => throw new ArgumentOutOfRangeException(message, innerException);
 
 		[DoesNotReturn]
