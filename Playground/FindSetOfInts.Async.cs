@@ -76,12 +76,12 @@ namespace Playground
 			var sw = Stopwatch.StartNew();
 			await FindAsync(Path1, Path2, PathOut, int.MaxValue);
 			sw.Stop();
-			Console.WriteLine($"FindSyncTask for batchSize = {int.MaxValue} ran in {sw.ElapsedMilliseconds / 1000}s");
+			Console.WriteLine($"FindAsync for batchSize = {int.MaxValue} ran in {sw.ElapsedMilliseconds / 1000}s");
 			GC.Collect();
 			sw.Restart();
 			await FindAsync(Path1, Path2, PathOut, 64_000);
 			sw.Stop();
-			Console.WriteLine($"FindSyncTask for batchSize = {64_000} ran in {sw.ElapsedMilliseconds / 1000}s");
+			Console.WriteLine($"FindAsync for batchSize = {64_000} ran in {sw.ElapsedMilliseconds / 1000}s");
 		}
 	}
 }
