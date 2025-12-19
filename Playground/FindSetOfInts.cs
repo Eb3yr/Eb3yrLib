@@ -59,12 +59,12 @@ namespace Playground
 			var sw = Stopwatch.StartNew();
 			Find(Path1, Path2, PathOut, int.MaxValue);
 			sw.Stop();
-			Console.WriteLine($"Find for batchSize = {int.MaxValue} ran in {sw.ElapsedMilliseconds / 1000}s");
+			Console.WriteLine($"Find for batchSize = {int.MaxValue} bits ran in {sw.ElapsedMilliseconds / 1000}s");
 			GC.Collect();
 			sw.Restart();
-			Find(Path1, Path2, PathOut, 64_000);
+			Find(Path1, Path2, PathOut, 64_000 * 8);
 			sw.Stop();
-			Console.WriteLine($"Find for batchSize = {64_000} ran in {sw.ElapsedMilliseconds / 1000}s");
+			Console.WriteLine($"Find for batchSize = {64_000} bytes ({64_000 * 8} bits) ran in {sw.ElapsedMilliseconds / 1000}s");
 		}
 	}
 }
