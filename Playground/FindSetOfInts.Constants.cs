@@ -6,8 +6,8 @@ namespace Playground
 {
     public static partial class FindSetOfInts
     {
-        const string Path1 = "a.bin";
-        const string Path2 = "b.bin";
-        const string PathOut = "out.bin";
+        public const string Path1 = "a.bin";
+        public const string Path2 = "b.bin";
+        public const string PathOut = "out.bin";
     }
 }
